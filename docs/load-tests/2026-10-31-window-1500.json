@@ -1,0 +1,47 @@
+{
+  "target": "http://127.0.0.1:8082",
+  "count": 1500,
+  "workers": 64,
+  "arrival_window_seconds": 60.0,
+  "photo_bytes": 232545,
+  "login": {
+    "requests": 1500,
+    "seconds": 0.433,
+    "requests_per_second": 3463.75,
+    "statuses": {
+      "200": 1500
+    },
+    "p50_ms": 15.57,
+    "p95_ms": 31.2,
+    "max_ms": 67.32
+  },
+  "check_in": {
+    "requests": 1500,
+    "seconds": 59.987,
+    "requests_per_second": 25.01,
+    "statuses": {
+      "201": 1500
+    },
+    "p50_ms": 21.1,
+    "p95_ms": 23.11,
+    "max_ms": 60.31
+  },
+  "health_after": 200,
+  "notes": "Local test only. No automatic retries. Latency excludes scheduled waiting; throughput includes arrival spacing. Not a VPS capacity guarantee.",
+  "environment": {
+    "type": "local Docker Desktop",
+    "cpus": 8,
+    "memory_bytes": 8217731072,
+    "photo_dimensions": "640x480",
+    "photo_type": "deterministic synthetic JPEG, quality 85",
+    "api": "Air development container; one instance",
+    "database": "PostgreSQL 16 Docker; one instance",
+    "api_db_max_connections": 32,
+    "api_db_min_connections": 4,
+    "upload_workers": 4,
+    "active_upload_limit": 8,
+    "architecture": "aarch64",
+    "generator": "same host as Docker Desktop"
+  },
+  "schema_version": 5
+}

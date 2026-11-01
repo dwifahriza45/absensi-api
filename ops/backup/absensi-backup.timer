@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Absensi backup nightly at 02:00 WIB
+
+[Timer]
+OnCalendar=*-*-* 02:00:00 Asia/Jakarta
+Persistent=true
+AccuracySec=1min
+Unit=absensi-backup.service
+
+[Install]
+WantedBy=timers.target

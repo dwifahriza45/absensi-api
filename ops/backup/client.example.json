@@ -1,0 +1,7 @@
+{
+  "ssh_host": "USER@SERVER_HOST",
+  "ssh_port": 22,
+  "identity_file": "~/.ssh/id_ed25519",
+  "remote_repository": "/srv/backups/absensi",
+  "local_repository": "~/Backups/absensi"
+}

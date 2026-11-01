@@ -1,0 +1,14 @@
+FROM golang:1.27.3-alpine
+
+RUN apk add --no-cache ca-certificates git tzdata
+ARG AIR_VERSION=v1.63.0
+RUN go install github.com/air-verse/air@${AIR_VERSION}
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN go build -trimpath -o /usr/local/bin/photoctl ./cmd/photoctl
+
+EXPOSE 8080
+CMD ["air", "-c", ".air.toml"]

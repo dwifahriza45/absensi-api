@@ -1,0 +1,18 @@
+[Unit]
+Description=Absensi nightly database and incremental photo backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+# Sesuaikan user serta path project dengan server.
+User=root
+WorkingDirectory=/srv/absensi-api
+ExecStart=/usr/bin/python3 /srv/absensi-api/scripts/backup_incremental.py nightly --config /etc/absensi/backup-server.json
+UMask=0077
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+TimeoutStartSec=2h
+TimeoutStopSec=120
+NoNewPrivileges=true

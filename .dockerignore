@@ -1,0 +1,17 @@
+.git
+.env
+.env.*
+!.env.example
+backups
+*.dump
+*.sql.gz
+*.tar.gz
+storage
+tmp
+.DS_Store
+.backup.lock
+__pycache__
+*.pyc
+backup-server.json
+backup-client.json
+ops/*.env

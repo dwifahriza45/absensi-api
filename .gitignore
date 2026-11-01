@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+ops/*.env
+storage/
+/bin/
+
+/tmp/
+
+.DS_Store
+
+backups/
+.backup.lock
+__pycache__/
+*.pyc
+backup-server.json
+backup-client.json

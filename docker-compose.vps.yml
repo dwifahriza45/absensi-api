@@ -1,0 +1,128 @@
+name: absensi-production
+
+services:
+  app:
+    image: "${DOCKER_IMAGE:?Set DOCKER_IMAGE}:${IMAGE_TAG:?Set IMAGE_TAG}"
+    env_file: .env.vps
+    # Storage dibaca dari .env.vps; volume local dipertahankan untuk restore.
+    environment:
+      APP_ENV: production
+      COOKIE_SECURE: "true"
+      APP_PORT: 8087
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable
+      STORAGE_DIR: /app/storage
+      # Root MinIO tidak diteruskan ke proses API.
+      MINIO_ROOT_USER: ""
+      MINIO_ROOT_PASSWORD: ""
+      TZ: ${APP_TIMEZONE}
+    ports:
+      - "127.0.0.1:${HTTP_PORT:?Set HTTP_PORT}:8087"
+    networks:
+      default:
+      absen:
+        aliases: [absensi-api]
+    volumes:
+      - storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://127.0.0.1:8087/api/v1/admin/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+  minio:
+    image: ${MINIO_IMAGE}
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_REGION_NAME: ${MINIO_REGION}
+    ports:
+      - "127.0.0.1:${MINIO_API_PORT}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+  minio-init:
+    image: ${MINIO_MC_IMAGE}
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_APP_ACCESS_KEY: ${MINIO_APP_ACCESS_KEY}
+      MINIO_APP_SECRET_KEY: ${MINIO_APP_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_PREFIX: ${MINIO_PREFIX}
+    depends_on:
+      minio:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      TZ: ${APP_TIMEZONE}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  # Tool migration dijalankan terpisah, mengikuti coffee-api.
+  # docker compose run --rm migrate
+  migrate:
+    image: migrate/migrate:v4.19.1
+
+    volumes:
+      - ./migrations:/migrations:ro
+
+    command:
+      - -path=/migrations
+      - -database=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable
+      - up
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    profiles:
+      - tools
+volumes:
+  pgdata:
+  storage:
+  minio-data:
+
+networks:
+  absen:
+    external: true
+    name: "${API_NETWORK:?Set API_NETWORK}"

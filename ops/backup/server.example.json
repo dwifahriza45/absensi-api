@@ -1,0 +1,4 @@
+{
+  "repository": "/srv/backups/absensi",
+  "compose_file": "/srv/absensi-api/docker-compose.yml"
+}
