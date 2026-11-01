@@ -6,7 +6,7 @@ backups
 *.dump
 *.sql.gz
 *.tar.gz
-storage
+/storage
 tmp
 .DS_Store
 .backup.lock
