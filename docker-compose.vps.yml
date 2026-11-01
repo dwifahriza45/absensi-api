@@ -4,13 +4,12 @@ services:
   app:
     image: "${DOCKER_IMAGE:?Set DOCKER_IMAGE}:${IMAGE_TAG:?Set IMAGE_TAG}"
     env_file: .env.vps
-    # Storage dibaca dari .env.vps; volume local dipertahankan untuk restore.
+    # Foto VPS disimpan di private bucket MinIO.
     environment:
       APP_ENV: production
       COOKIE_SECURE: "true"
       APP_PORT: 8087
       DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable
-      STORAGE_DIR: /app/storage
       # Root MinIO tidak diteruskan ke proses API.
       MINIO_ROOT_USER: ""
       MINIO_ROOT_PASSWORD: ""
@@ -21,8 +20,6 @@ services:
       default:
       absen:
         aliases: [absensi-api]
-    volumes:
-      - storage:/app/storage
     depends_on:
       db:
         condition: service_healthy
@@ -119,7 +116,6 @@ services:
       - tools
 volumes:
   pgdata:
-  storage:
   minio-data:
 
 networks:

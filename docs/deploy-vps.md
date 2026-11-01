@@ -1,6 +1,6 @@
 # Deploy API di VPS
 
-Gunakan `docker-compose.vps.yml` untuk deployment baru. Compose lokal/dev tidak berubah. Project VPS memakai volume `absensi-production_pgdata`, `absensi-production_minio-data`, dan `absensi-production_storage`. Jangan gunakan `down -v` untuk update. Jangan mengganti project Compose deployment lama tanpa memindahkan datanya terlebih dahulu.
+Gunakan `docker-compose.vps.yml` untuk deployment baru. Compose lokal/dev tidak berubah. Project VPS memakai volume `absensi-production_pgdata` dan `absensi-production_minio-data`. Jangan gunakan `down -v` untuk update. Jangan mengganti project Compose deployment lama tanpa memindahkan datanya terlebih dahulu.
 
 ## Image Docker Hub
 
@@ -66,3 +66,5 @@ docker compose --env-file .env.vps -f docker-compose.vps.yml up -d
 ```
 
 Untuk backup otomatis, gunakan file Compose `docker-compose.vps.yml`, env file `.env.vps`, dan nama project `absensi-production` pada konfigurasi backup. Jadwal backup belum diaktifkan otomatis.
+
+Konfigurasi VPS S3 tidak memakai `STORAGE_DIR` atau volume foto lokal. Backup foto mengambil objek dari MinIO melalui API S3. Dukungan storage lokal pada kode tetap tersedia untuk alat migrasi/restore. Jika `.env.vps` dibuat sebelumnya, baris `STORAGE_DIR` boleh dihapus; jangan menghapus volume lama sebelum memastikan backup dan migrasi selesai.
