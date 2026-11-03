@@ -14,9 +14,9 @@ if not args.dockerhub_user.replace('-', '').replace('_', '').isalnum():
 if not args.tag.startswith('sha-') or len(args.tag) != 44 or any(c not in '0123456789abcdef' for c in args.tag[4:]):
     parser.error('Tag must be sha- followed by the full 40-character lowercase commit SHA')
 root = Path(__file__).resolve().parents[1]
-path = root / '.env.vps'
+path = root / '.env'
 if path.exists():
-    parser.error('.env.vps already exists; edit it directly to preserve credentials')
+    parser.error('.env already exists; edit it directly to preserve credentials')
 values = {
     'JWT_SECRET': secrets.token_hex(32),
     'PHONE_HASH_SECRET': secrets.token_hex(32),
@@ -36,4 +36,4 @@ content = '\n'.join(line.split('=', 1)[0] + '=' + values[line.split('=', 1)[0]] 
 fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
 with os.fdopen(fd, 'w') as stream:
     stream.write(content)
-print('Created private .env.vps with random secrets. Keep it in your disaster recovery backup.')
+print('Created private .env with random secrets. Keep it in your disaster recovery backup.')

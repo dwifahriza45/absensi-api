@@ -15,7 +15,7 @@ import (
 
 type EmployeeFinder interface {
 	GetByID(context.Context, string) (employees.Employee, error)
-	GetByName(context.Context, string) (employees.Employee, error)
+	GetByNIK(context.Context, string) (employees.Employee, error)
 }
 
 // SessionManager describes the session operations used by authentication.
@@ -39,18 +39,18 @@ func NewService(e EmployeeFinder, r *Repository, t SessionManager, hasher shared
 	return &Service{employees: e, repo: r, tokens: t, limiter: shared.NewAttemptLimiter(5, 15*time.Minute), adminFailures: shared.NewAttemptLimiter(10, 15*time.Minute), hasher: hasher, employeeRequests: shared.NewAttemptLimiter(employeeLoginPerIP, time.Minute), adminRequests: shared.NewAttemptLimiter(100, time.Minute)}
 }
 func (s *Service) LoginEmployee(ctx context.Context, ip string, req EmployeeLoginRequest) (SessionResponse, error) {
-	if len(req.Fullname) > 320 || utf8.RuneCountInString(req.Fullname) > 80 || len(req.Phone) > 32 || req.Phone == "" {
+	if len(req.Fullname) > 320 || utf8.RuneCountInString(req.Fullname) > 80 || !shared.ValidNIK(req.NIK) {
 		return SessionResponse{}, ErrInvalidCredentials
 	}
 	key := "employee:" + ip + ":" + strings.ToLower(strings.Join(strings.Fields(req.Fullname), " "))
 	if !s.employeeRequests.Allow("login:"+ip) || !s.limiter.Allow(key) {
 		return SessionResponse{}, ErrTooManyAttempts
 	}
-	e, err := s.employees.GetByName(ctx, req.Fullname)
+	e, err := s.employees.GetByNIK(ctx, req.NIK)
 	if err != nil && !errors.Is(err, employees.ErrNotFound) {
 		return SessionResponse{}, err
 	}
-	if err != nil || !e.IsActive || !s.hasher.Matches(req.Phone, e.PhoneHash) {
+	if err != nil || !e.IsActive || e.NIK == "" || e.NIK != req.NIK || !strings.EqualFold(strings.Join(strings.Fields(e.Name), " "), strings.Join(strings.Fields(req.Fullname), " ")) {
 		return SessionResponse{}, ErrInvalidCredentials
 	}
 	s.limiter.Reset(key)

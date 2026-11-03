@@ -8,7 +8,7 @@ import (
 
 type EmployeeLoginRequest struct {
 	Fullname string `json:"fullname" validate:"required,notblank,max=80" label:"Nama Lengkap"`
-	Phone    string `json:"phone" validate:"required,notblank,max=32,phone" label:"Nomor HP"`
+	NIK      string `json:"nik" validate:"required,nik" label:"NIK"`
 }
 type AdminLoginRequest struct {
 	Email    string `json:"email" validate:"required,notblank,max=254,email" label:"Email"`
@@ -25,5 +25,5 @@ type SessionResponse struct {
 func (r *AdminLoginRequest) Normalize() { r.Email = strings.TrimSpace(r.Email) }
 func (r *EmployeeLoginRequest) Normalize() {
 	r.Fullname = strings.Join(strings.Fields(r.Fullname), " ")
-	r.Phone = strings.TrimSpace(r.Phone)
+	r.NIK = strings.TrimSpace(r.NIK)
 }

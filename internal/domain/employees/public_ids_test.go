@@ -166,6 +166,7 @@ func TestPublicIDGeneration(t *testing.T) {
 		t.Fatal("UUID reference accepted in employee_id")
 	}
 
+	migrate("000011_employee_nik.up.sql")
 	if _, err = NewRepository(db).FindByID(ctx, employee); !errors.Is(err, ErrNotFound) {
 		t.Fatal("employee UUID still accepted as reference", err)
 	}

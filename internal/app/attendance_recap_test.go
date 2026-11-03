@@ -49,10 +49,10 @@ func TestAttendanceRecapFiltersAndPDF(t *testing.T) {
 	if unauthorized.Code != 401 {
 		t.Fatal("PDF export exposed without admin session")
 	}
-	for _, scope := range []string{"", "&mitra=Rekap+Mitra", "&bidang=Rekap+Bidang", "&mitra=%20&bidang=Rekap+Bidang"} {
+	for _, scope := range []string{"", "&bidang=Rekap+Bidang", "&mitra=%20&bidang=Rekap+Bidang"} {
 		w := httptest.NewRecorder()
 		recap.ServeHTTP(w, httptest.NewRequest("GET", "/recap?from=2026-10-31&to=2026-10-31"+scope, nil))
-		if w.Code != 400 || !strings.Contains(w.Body.String(), "Silakan pilih Mitra dan Bidang") {
+		if w.Code != 400 || !strings.Contains(w.Body.String(), "Silakan pilih Mitra") {
 			t.Fatal("required export scope bypassed")
 		}
 	}
@@ -63,7 +63,7 @@ func TestAttendanceRecapFiltersAndPDF(t *testing.T) {
 	}{
 		{"from=2026-10-30&to=2026-10-31&include_absent=true", 200, 2, false},
 		{"from=2026-10-30&to=2026-10-31&q=Alpha", 200, 2, false},
-		{"from=2026-10-30&to=2026-10-31&include_absent=true&mitra=Rekap+Mitra&bidang=Rekap+Bidang", 200, 2, false},
+		{"from=2026-10-30&to=2026-10-31&include_absent=true&mitra=Rekap+Mitra&bidang=Nonexistent", 200, 2, false},
 		{"from=2026-10-30&to=2026-10-31&status=hadir", 200, 1, false},
 		{"from=2026-10-30&to=2026-10-31&status=belum", 200, 1, false},
 		{"from=2026-09-01&to=2026-10-31", 400, 0, false},
@@ -71,7 +71,7 @@ func TestAttendanceRecapFiltersAndPDF(t *testing.T) {
 		{"from=2026-10-31&to=2026-10-31&status=invalid", 400, 0, false},
 	} {
 		w := httptest.NewRecorder()
-		recap.ServeHTTP(w, httptest.NewRequest("GET", "/api/v1/admin/attendances/recap?"+tc.query+"&mitra=Rekap+Mitra&bidang=Rekap+Bidang", nil))
+		recap.ServeHTTP(w, httptest.NewRequest("GET", "/api/v1/admin/attendances/recap?"+tc.query+"&mitra=Rekap+Mitra", nil))
 		if w.Code != tc.status {
 			t.Fatalf("%s: %d %s", tc.query, w.Code, w.Body.String())
 		}

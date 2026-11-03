@@ -77,7 +77,7 @@ func TestBidangCRUDAndEmployeeReferences(t *testing.T) {
 	call("POST", "bidang", `{"name":"IT"}`, true, 409)
 	call("GET", "bidang/"+b.ID, "", true, 404)
 	call("GET", "bidang/"+b.BidangID, "", true, 200)
-	employeeBody := `{"name":"Bidang Employee","phone":"081234567899","mitra_id":"` + mitraID + `","bidang_id":"` + b.BidangID + `"}`
+	employeeBody := `{"nik":"0123456789012345","name":"Bidang Employee","phone":"081234567899","mitra_id":"` + mitraID + `","bidang_id":"` + b.BidangID + `"}`
 	call("POST", "employees", strings.ReplaceAll(employeeBody, b.BidangID, "BID-20000101-999999"), true, 400)
 	var e employees.Response
 	if err := json.Unmarshal(call("POST", "employees", employeeBody, true, 201), &e); err != nil {
@@ -103,7 +103,7 @@ func TestBidangCRUDAndEmployeeReferences(t *testing.T) {
 	}
 	call("GET", "employees?bidang_id="+b.BidangID, "", true, 200)
 	call("GET", "bidang?q=Technology", "", true, 200)
-	call("PUT", "employees/"+e.EmployeeID, `{"name":"Bidang Employee","mitra_id":"`+mitraID+`","bidang_id":"`+b.BidangID+`","isActive":false}`, true, 200)
+	call("PUT", "employees/"+e.EmployeeID, `{"nik":"0123456789012345","name":"Bidang Employee","mitra_id":"`+mitraID+`","bidang_id":"`+b.BidangID+`","isActive":false}`, true, 200)
 	usage = bidang.Response{}
 	if err := json.Unmarshal(call("GET", "bidang/"+b.BidangID, "", true, 200), &usage); err != nil {
 		t.Fatal(err)
@@ -113,7 +113,7 @@ func TestBidangCRUDAndEmployeeReferences(t *testing.T) {
 	}
 	call("DELETE", "bidang/"+b.BidangID, "", true, 409)
 	// Move to another required division before deleting the previous master.
-	call("PUT", "employees/"+e.EmployeeID, `{"name":"Bidang Employee","bidang_id":"`+otherBidangID+`","mitra_id":"`+mitraID+`"}`, true, 200)
+	call("PUT", "employees/"+e.EmployeeID, `{"nik":"0123456789012345","name":"Bidang Employee","bidang_id":"`+otherBidangID+`","mitra_id":"`+mitraID+`"}`, true, 200)
 	call("DELETE", "bidang/"+b.BidangID, "", true, 200)
 	call("GET", "bidang/"+b.BidangID, "", true, 404)
 	call("PUT", "bidang/BID-20000101-999999", `{"name":"Missing"}`, true, 404)

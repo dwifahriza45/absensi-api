@@ -22,8 +22,8 @@ func TestLoginFieldValidationBeforeAuthentication(t *testing.T) {
 		{"null admin", `null`, false, map[string]string{"email": "Email Wajib Diisi", "password": "Password Wajib Diisi"}},
 		{"whitespace admin", `{"email":"  ","password":" \t "}`, false, map[string]string{"email": "Email Wajib Diisi", "password": "Password Wajib Diisi"}},
 		{"invalid email", `{"email":"invalid","password":"secret"}`, false, map[string]string{"email": "Format Email Tidak Valid"}},
-		{"empty employee", `{"fullname":"","phone":""}`, true, map[string]string{"fullname": "Nama Lengkap Wajib Diisi", "phone": "Nomor HP Wajib Diisi"}},
-		{"invalid phone", `{"fullname":"Employee","phone":"abc"}`, true, map[string]string{"phone": "Format Nomor HP Tidak Valid"}},
+		{"empty employee", `{"fullname":"","nik":""}`, true, map[string]string{"fullname": "Nama Lengkap Wajib Diisi", "nik": "NIK Wajib Diisi"}},
+		{"invalid NIK", `{"fullname":"Employee","nik":"abc"}`, true, map[string]string{"nik": "NIK Harus 16 Digit Angka"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -70,11 +70,11 @@ func TestIdentifierNormalizationPreservesPassword(t *testing.T) {
 	if err := validation.Struct(&req); err == nil {
 		t.Fatal("bcrypt byte limit not validated")
 	}
-	employee := EmployeeLoginRequest{Fullname: "  Example   Employee ", Phone: " +6281234567890 "}
+	employee := EmployeeLoginRequest{Fullname: "  Example   Employee ", NIK: " 0123456789012345 "}
 	if err := validation.Struct(&employee); err != nil {
 		t.Fatal(err)
 	}
-	if employee.Fullname != "Example Employee" || employee.Phone != "+6281234567890" {
+	if employee.Fullname != "Example Employee" || employee.NIK != "0123456789012345" {
 		t.Fatal("identifier normalization failed")
 	}
 }

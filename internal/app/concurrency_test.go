@@ -66,7 +66,7 @@ func concurrencyDB(t *testing.T) (*pgxpool.Pool, *pgxpool.Pool) {
 	if _, err = root.Exec(ctx, "CREATE EXTENSION IF NOT EXISTS pgcrypto"); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"000001_init.up.sql", "000002_admin_sessions.up.sql", "000003_instansi.up.sql", "000004_public_ids.up.sql", "000005_employee_login_index.up.sql", "000006_business_key_references.up.sql", "000007_employee_phone_encryption.up.sql", "000008_bidang.up.sql", "000009_remove_employee_daerah.up.sql", "000010_instansi_to_mitra.up.sql"} {
+	for _, name := range []string{"000001_init.up.sql", "000002_admin_sessions.up.sql", "000003_instansi.up.sql", "000004_public_ids.up.sql", "000005_employee_login_index.up.sql", "000006_business_key_references.up.sql", "000007_employee_phone_encryption.up.sql", "000008_bidang.up.sql", "000009_remove_employee_daerah.up.sql", "000010_instansi_to_mitra.up.sql", "000011_employee_nik.up.sql"} {
 		sql, err := os.ReadFile(filepath.Join("../../migrations", name))
 		if err != nil {
 			t.Fatal(err)
@@ -386,8 +386,8 @@ func TestConcurrentImportsAreWholeSnapshots(t *testing.T) {
 		go func(n int, pool *pgxpool.Pool) {
 			<-start
 			_, err := employees.NewRepository(pool).Import(ctx, []employees.Employee{
-				{Name: fmt.Sprintf("set-%d-one", n), PhoneHash: fmt.Sprintf("hash-%d-one", n), Mitra: "B"},
-				{Name: fmt.Sprintf("set-%d-two", n), PhoneHash: fmt.Sprintf("hash-%d-two", n), Mitra: "A"},
+				{NIK: fmt.Sprintf("%016d", n*2+1), Name: fmt.Sprintf("set-%d-one", n), PhoneHash: fmt.Sprintf("hash-%d-one", n), Mitra: "B"},
+				{NIK: fmt.Sprintf("%016d", n*2+2), Name: fmt.Sprintf("set-%d-two", n), PhoneHash: fmt.Sprintf("hash-%d-two", n), Mitra: "A"},
 			}, true)
 			errs <- err
 		}(n, pool)

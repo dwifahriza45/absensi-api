@@ -140,17 +140,15 @@ func (s *Service) checkOut(ctx context.Context, employeeID string, in CheckOutIn
 	if err != nil {
 		return AttendanceDTO{}, err
 	}
-	canCheckOut, reasonRequired := s.checkOutRules(now, attendance, len(submitted))
+	canCheckOut, _ := s.checkOutRules(now, attendance, len(submitted))
 	if !canCheckOut {
-		return AttendanceDTO{}, ErrCheckOutTooEarly
+		return AttendanceDTO{}, ErrReportsIncomplete
 	}
 
-	reason := cleanReason(in.Reason)
-	if reason == "" && attendance.EarlyLeaveReason != nil {
+	// Checkout reasons come only from a previously submitted early-leave request.
+	reason := ""
+	if attendance.EarlyLeaveRequestedAt != nil && attendance.EarlyLeaveReason != nil {
 		reason = *attendance.EarlyLeaveReason
-	}
-	if reasonRequired && reason == "" {
-		return AttendanceDTO{}, ErrReasonRequired
 	}
 
 	attendance.CheckOutAt = &now
@@ -239,13 +237,13 @@ func (s *Service) todayAttendance(ctx context.Context, employeeID string, now ti
 }
 
 // checkOutRules tidak membatasi jam pulang.
-// Alasan tetap wajib bila bukti laporan kerja belum lengkap.
+// Laporan harus lengkap kecuali pegawai sudah mengajukan pulang lebih awal.
 func (s *Service) checkOutRules(_ time.Time, a Attendance, doneSessions int) (canCheckOut, reasonRequired bool) {
 	if a.CheckOutAt != nil {
 		return false, false
 	}
-	canCheckOut = true
-	reasonRequired = doneSessions < s.schedule.PhotoSessions
+	canCheckOut = doneSessions >= s.schedule.PhotoSessions || (a.EarlyLeaveRequestedAt != nil && a.EarlyLeaveReason != nil && cleanReason(*a.EarlyLeaveReason) != "")
+	reasonRequired = false
 	return canCheckOut, reasonRequired
 }
 

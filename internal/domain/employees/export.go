@@ -39,7 +39,7 @@ func (h *Handler) Export(w http.ResponseWriter, r *http.Request) {
 		if status != "all" && item.IsActive != (status == "active") {
 			continue
 		}
-		if needle != "" && !strings.Contains(strings.ToLower(item.Name+" "+item.Phone), needle) && !(phoneNeedle != "" && strings.Contains(item.Phone, phoneNeedle)) {
+		if needle != "" && !strings.Contains(strings.ToLower(item.Name+" "+item.Phone+" "+item.NIK), needle) && !(phoneNeedle != "" && strings.Contains(item.Phone, phoneNeedle)) {
 			continue
 		}
 		filtered = append(filtered, item)
@@ -82,24 +82,27 @@ func employeeWorkbook(items []Response, options FilterOptions) ([]byte, error) {
 	if err = f.SetCellStyle("Karyawan", "B2", "B5001", phoneStyle); err != nil {
 		return nil, err
 	}
-	headers := []string{"NAMA LENGKAP", "NOMOR HP", "MITRA", "BIDANG"}
+	if err = f.SetColStyle("Karyawan", "E:F", phoneStyle); err != nil {
+		return nil, err
+	}
+	headers := []string{"NAMA LENGKAP", "NOMOR HP", "MITRA", "BIDANG", "NIK", "ID KARYAWAN"}
 	for i, value := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		if err = f.SetCellStr("Karyawan", cell, value); err != nil {
 			return nil, err
 		}
 	}
-	if err = f.SetCellStyle("Karyawan", "A1", "D1", style); err != nil {
+	if err = f.SetCellStyle("Karyawan", "A1", "F1", style); err != nil {
 		return nil, err
 	}
 	if err = f.SetRowHeight("Karyawan", 1, 26); err != nil {
 		return nil, err
 	}
-	if err = f.SetColWidth("Karyawan", "A", "D", 26); err != nil {
+	if err = f.SetColWidth("Karyawan", "A", "F", 26); err != nil {
 		return nil, err
 	}
 	for i, item := range items {
-		for j, value := range []string{item.Name, item.Phone, item.Mitra, item.Bidang} {
+		for j, value := range []string{item.Name, item.Phone, item.Mitra, item.Bidang, item.NIK, item.EmployeeID} {
 			cell, _ := excelize.CoordinatesToCellName(j+1, i+2)
 			// Explicit strings preserve leading zeroes and never execute formulas.
 			if err = f.SetCellStr("Karyawan", cell, value); err != nil {

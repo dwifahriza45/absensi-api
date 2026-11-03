@@ -61,6 +61,7 @@ func TestMitraMigrationAndImport(t *testing.T) {
 	migrate("000008_bidang.up.sql")
 	migrate("000009_remove_employee_daerah.up.sql")
 	migrate("000010_instansi_to_mitra.up.sql")
+	migrate("000011_employee_nik.up.sql")
 	repo := NewRepository(db)
 	list, err := repo.List(ctx, ListFilter{Mitra: "Office A"})
 	if err != nil {
@@ -71,9 +72,9 @@ func TestMitraMigrationAndImport(t *testing.T) {
 	}
 	oldID := list[0].MitraID
 	imported, err := repo.Import(ctx, []Employee{
-		{Name: "Imported One", Mitra: "Office A", PhoneHash: "new1"},
-		{Name: "Imported Two", Mitra: "Office B", PhoneHash: "new2"},
-		{Name: "Imported Three", PhoneHash: "new3"},
+		{NIK: "0123456789012345", Name: "Imported One", Mitra: "Office A", PhoneHash: "new1"},
+		{NIK: "0123456789012346", Name: "Imported Two", Mitra: "Office B", PhoneHash: "new2"},
+		{NIK: "0123456789012347", Name: "Imported Three", PhoneHash: "new3"},
 	}, false)
 	if err != nil {
 		t.Fatal(err)
@@ -97,7 +98,7 @@ func TestMitraMigrationAndImport(t *testing.T) {
 	if err != nil || len(opts.Mitra) != 2 {
 		t.Fatalf("options: %+v %v", opts, err)
 	}
-	_, err = repo.Import(ctx, []Employee{{Name: "Imported One", Mitra: "Office B", PhoneHash: "new1"}}, false)
+	_, err = repo.Import(ctx, []Employee{{NIK: "0123456789012345", Name: "Imported One", Mitra: "Office B", PhoneHash: "new1"}}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,6 +124,7 @@ func TestMitraMigrationAndImport(t *testing.T) {
 	if err != nil || len(report) != 1 || report[0].Mitra != "Office B" {
 		t.Fatalf("attendance institution join: %+v %v", report, err)
 	}
+	migrate("000011_employee_nik.down.sql")
 	migrate("000010_instansi_to_mitra.down.sql")
 	migrate("000009_remove_employee_daerah.down.sql")
 	migrate("000008_bidang.down.sql")
@@ -141,6 +143,7 @@ func TestMitraMigrationAndImport(t *testing.T) {
 	migrate("000008_bidang.up.sql")
 	migrate("000009_remove_employee_daerah.up.sql")
 	migrate("000010_instansi_to_mitra.up.sql")
+	migrate("000011_employee_nik.up.sql")
 	if _, err = repo.List(ctx, ListFilter{}); err != nil {
 		t.Fatal(err)
 	}

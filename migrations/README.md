@@ -15,11 +15,13 @@ Jalankan file sesuai nomor versi. Setiap versi memiliki pasangan `.up.sql` untuk
 
 | `000010_instansi_to_mitra` | Rename master menjadi mitra, FK mitra_id dan kode MTR; pertahankan UUID/data/counter | Pulihkan nama instansi, FK instansi_id dan kode INT |
 
+| `000011_employee_nik` | NIK KTP unik 16 digit, nullable untuk data lama; cabut sesi pegawai | Hapus NIK dan cabut sesi pegawai |
+
 ## Struktur setelah seluruh migration
 | Tabel | Kegunaan | ID bisnis |
 |---|---|---|
 | `users` | Akun admin dengan email/password bcrypt | `user_id`: `USER-YYYYMMDD-000001` |
-| `employees` | Karyawan dengan nama dan hash nomor HP | `employee_id`: `EMP-YYYYMMDD-000001` |
+| `employees` | Karyawan dengan nama, NIK unik, dan kontak nomor HP | `employee_id`: `EMP-YYYYMMDD-000001` |
 | `mitra` | Master mitra karyawan | `mitra_id`: `MTR-YYYYMMDD-000001` |
 | `bidang` | Master bidang karyawan | `bidang_id`: `BID-YYYYMMDD-000001` |
 | `photos` | Metadata file foto di storage privat | `photo_id`: `PHO-YYYYMMDD-000001` |

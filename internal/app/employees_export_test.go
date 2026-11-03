@@ -35,9 +35,9 @@ func TestEmployeeExportFiltersAndTextPhones(t *testing.T) {
 	svc := employees.NewService(employees.NewRepository(db), shared.NewPhoneHasher("export-test-secret"))
 	active, inactive := true, false
 	for _, row := range []employees.WriteRequest{
-		{Name: "Export Alpha", Phone: "081234567891", MitraID: mitra1, BidangID: bidang1, IsActive: &active},
-		{Name: "Export Beta", Phone: "081234567892", MitraID: mitra1, BidangID: bidang2, IsActive: &inactive},
-		{Name: "=1+1", Phone: "081234567893", MitraID: mitra2, BidangID: bidang1, IsActive: &active},
+		{NIK: "0123456789012345", Name: "Export Alpha", Phone: "081234567891", MitraID: mitra1, BidangID: bidang1, IsActive: &active},
+		{NIK: "0123456789012346", Name: "Export Beta", Phone: "081234567892", MitraID: mitra1, BidangID: bidang2, IsActive: &inactive},
+		{NIK: "0123456789012347", Name: "=1+1", Phone: "081234567893", MitraID: mitra2, BidangID: bidang1, IsActive: &active},
 	} {
 		if _, err := svc.Save(ctx, "", row); err != nil {
 			t.Fatal(err)
@@ -60,6 +60,7 @@ func TestEmployeeExportFiltersAndTextPhones(t *testing.T) {
 		{"?status=all&mitra_id=" + mitra1, true, 200, 2},
 		{"?status=all&bidang_id=" + bidang1, true, 200, 2},
 		{"?q=Alpha", true, 200, 1},
+		{"?q=0123456789012345", true, 200, 1},
 		{"?q=Alpha&mitra_id=" + mitra1 + "&bidang_id=" + bidang1, true, 200, 1},
 		{"?q=Alpha&mitra_id=" + mitra2, true, 200, 0},
 		{"?status=inactive&mitra_id=" + mitra1 + "&bidang_id=" + bidang2, true, 200, 1},
@@ -88,7 +89,7 @@ func TestEmployeeExportFiltersAndTextPhones(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(rows) != tc.rows+1 || len(rows[0]) != 4 || rows[0][0] != "NAMA LENGKAP" || rows[0][1] != "NOMOR HP" {
+		if len(rows) != tc.rows+1 || len(rows[0]) != 6 || rows[0][0] != "NAMA LENGKAP" || rows[0][1] != "NOMOR HP" {
 			t.Fatalf("%s wrong export: %+v", tc.query, rows)
 		}
 		for i, row := range rows[1:] {

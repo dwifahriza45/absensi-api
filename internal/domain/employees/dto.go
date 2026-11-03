@@ -18,6 +18,7 @@ type Response struct {
 	HasAttendance bool   `json:"has_attendance"`
 	CanDelete     bool   `json:"can_delete"`
 	DeleteReason  string `json:"delete_reason,omitempty"`
+	NIK           string `json:"nik,omitempty"`
 	Phone         string `json:"phone,omitempty"`
 	ID            string `json:"id"`
 	EmployeeID    string `json:"employee_id"`
@@ -60,8 +61,10 @@ type FilterOptions struct {
 
 // ImportRow adalah satu baris dari file Excel.
 type ImportRow struct {
-	Name  string `json:"name"`
-	Mitra string `json:"mitra"`
+	EmployeeID string `json:"employee_id"`
+	NIK        string `json:"nik"`
+	Name       string `json:"name"`
+	Mitra      string `json:"mitra"`
 
 	Bidang string `json:"bidang"`
 	Phone  string `json:"phone"`

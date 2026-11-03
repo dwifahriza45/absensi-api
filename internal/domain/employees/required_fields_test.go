@@ -54,7 +54,7 @@ func (r *importCapture) Import(_ context.Context, rows []Employee, _ bool) (Impo
 func TestImportSkipsMissingDivision(t *testing.T) {
 	repo := &importCapture{}
 	s := NewService(repo, shared.NewPhoneHasher("test-secret"))
-	valid := ImportRow{Name: "Valid", Phone: "081234567890", Bidang: "IT"}
+	valid := ImportRow{NIK: "0123456789012345", Name: "Valid", Phone: "081234567890", Bidang: "IT"}
 	missing := valid
 	missing.Name = "Missing Division"
 	missing.Bidang = "  "

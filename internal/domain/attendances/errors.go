@@ -3,6 +3,7 @@ package attendances
 import "github.com/haidarrasyad/absensi-api/internal/pkg/apperror"
 
 var (
+	ErrReportsIncomplete = apperror.Conflict("reports_incomplete", "Absen pulang belum dapat dilakukan karena masih ada laporan kerja yang belum lengkap. Silakan lengkapi seluruh sesi laporan kerja terlebih dahulu.")
 	ErrSelfieRequired    = apperror.BadRequest("selfie_required", "Foto selfie wajib diambil.")
 	ErrLocationRequired  = apperror.BadRequest("location_required", "Lokasi wajib diizinkan sebelum absen.")
 	ErrNotFound          = apperror.NotFound("attendance_not_found", "Data absen tidak ditemukan.")

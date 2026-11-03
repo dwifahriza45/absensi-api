@@ -42,3 +42,5 @@ Referensi: [OWASP File Upload](https://cheatsheetseries.owasp.org/cheatsheets/Fi
 ## Perubahan referensi pada migration 000006
 
 FK antartabel memakai kode bisnis EMP/INT/ATT/PHO, sementara UUID primary key dipertahankan. Sesi menggunakan FK eksplisit USER atau EMP dan kode SES; pemilik yang dihapus mencabut sesi melalui cascade. Constraint mencegah satu sesi dimiliki admin dan karyawan sekaligus. Migrasi mencabut sesi lama tanpa pemilik. JWT lama perlu refresh/login ulang karena subject/jti sekarang memakai kode bisnis. ID berurutan tetap tidak memberi hak akses: guard role/session berlaku untuk setiap request foto dan absensi.
+
+Login pegawai menggunakan nama + NIK KTP 16 digit sejak migration 000011. NIK hanya dikembalikan untuk admin, tidak pada pencarian publik atau profil pegawai. Perubahan profil/import mencabut sesi karyawan terkait.

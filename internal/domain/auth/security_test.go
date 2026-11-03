@@ -21,15 +21,15 @@ type employeeStub struct{ employee employees.Employee }
 func (e employeeStub) GetByID(context.Context, string) (employees.Employee, error) {
 	return e.employee, nil
 }
-func (e employeeStub) GetByName(context.Context, string) (employees.Employee, error) {
+func (e employeeStub) GetByNIK(context.Context, string) (employees.Employee, error) {
 	return e.employee, nil
 }
-func TestEmployeeLoginRequiresRegisteredPhone(t *testing.T) {
+func TestEmployeeLoginRequiresRegisteredNIK(t *testing.T) {
 	hasher := shared.NewPhoneHasher("test-phone-secret")
-	s := NewService(employeeStub{employees.Employee{ID: shared.NewID(), IsActive: true, PhoneHash: hasher.Hash("081234567890")}}, nil, nil, hasher, 3000)
-	for _, phone := range []string{"", "081111111111", "not-a-number"} {
-		if _, err := s.LoginEmployee(context.Background(), "test", EmployeeLoginRequest{Fullname: "Employee", Phone: phone}); err != ErrInvalidCredentials {
-			t.Fatalf("phone %q: %v", phone, err)
+	s := NewService(employeeStub{employees.Employee{ID: shared.NewID(), Name: "Employee", NIK: "0123456789012345", IsActive: true}}, nil, nil, hasher, 3000)
+	for _, nik := range []string{"", "0123456789012346", "not-a-number", "081234567890"} {
+		if _, err := s.LoginEmployee(context.Background(), "test", EmployeeLoginRequest{Fullname: "Employee", NIK: nik}); err != ErrInvalidCredentials {
+			t.Fatalf("nik %q: %v", nik, err)
 		}
 	}
 }
@@ -58,9 +58,9 @@ func TestSessionTokensOnlyInHTTPOnlyCookies(t *testing.T) {
 
 func TestSharedOfficeIPDoesNotUseAdminLoginBudget(t *testing.T) {
 	hasher := shared.NewPhoneHasher("test-secret")
-	s := NewService(employeeStub{employees.Employee{ID: shared.NewID(), IsActive: true, PhoneHash: hasher.Hash("081234567890")}}, nil, nil, hasher, 3000)
+	s := NewService(employeeStub{employees.Employee{ID: shared.NewID(), Name: "Employee", NIK: "0123456789012345", IsActive: true}}, nil, nil, hasher, 3000)
 	for i := 0; i < 1500; i++ {
-		_, err := s.LoginEmployee(context.Background(), "office-ip", EmployeeLoginRequest{Fullname: fmt.Sprintf("Employee %d", i), Phone: "081111111111"})
+		_, err := s.LoginEmployee(context.Background(), "office-ip", EmployeeLoginRequest{Fullname: fmt.Sprintf("Employee %d", i), NIK: "0123456789012346"})
 		if !errors.Is(err, ErrInvalidCredentials) {
 			t.Fatalf("employee %d incorrectly blocked: %v", i, err)
 		}
@@ -69,9 +69,9 @@ func TestSharedOfficeIPDoesNotUseAdminLoginBudget(t *testing.T) {
 		t.Fatal("employees exhausted admin budget")
 	}
 	for i := 0; i < 5; i++ {
-		_, _ = s.LoginEmployee(context.Background(), "office-ip", EmployeeLoginRequest{Fullname: "Same Employee", Phone: "081111111111"})
+		_, _ = s.LoginEmployee(context.Background(), "office-ip", EmployeeLoginRequest{Fullname: "Same Employee", NIK: "0123456789012346"})
 	}
-	if _, err := s.LoginEmployee(context.Background(), "office-ip", EmployeeLoginRequest{Fullname: "Same Employee", Phone: "081111111111"}); !errors.Is(err, ErrTooManyAttempts) {
+	if _, err := s.LoginEmployee(context.Background(), "office-ip", EmployeeLoginRequest{Fullname: "Same Employee", NIK: "0123456789012346"}); !errors.Is(err, ErrTooManyAttempts) {
 		t.Fatal("per-account brute force limit disabled")
 	}
 }

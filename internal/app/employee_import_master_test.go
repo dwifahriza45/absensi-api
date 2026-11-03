@@ -19,7 +19,7 @@ func TestEmployeeImportResolvesDropdownNamesToMasterIDs(t *testing.T) {
 	}
 	svc := employees.NewService(employees.NewRepository(db), shared.NewPhoneHasher("dropdown-test"))
 	for i := 0; i < 2; i++ {
-		result, err := svc.Import(ctx, employees.ImportRequest{Rows: []employees.ImportRow{{Name: "Dropdown Employee", Phone: "6281234567890", Mitra: "Dropdown Mitra", Bidang: "Dropdown Bidang"}}})
+		result, err := svc.Import(ctx, employees.ImportRequest{Rows: []employees.ImportRow{{NIK: "0123456789012345", Name: "Dropdown Employee", Phone: "6281234567890", Mitra: "Dropdown Mitra", Bidang: "Dropdown Bidang"}}})
 		if err != nil || len(result.Skipped) > 0 {
 			t.Fatalf("import failed: %+v %v", result, err)
 		}

@@ -12,6 +12,9 @@ import (
 func employeeWriteError(err error) error {
 	var pe *pgconn.PgError
 	if errors.As(err, &pe) {
+		if pe.Code == "23505" && pe.ConstraintName == "employees_nik_key" {
+			return apperror.Conflict("employee_nik_exists", "NIK sudah terdaftar pada karyawan lain.")
+		}
 		if pe.Code == "23505" {
 			return apperror.Conflict("employee_phone_exists", "Nomor HP sudah terdaftar pada karyawan lain.")
 		}
@@ -34,9 +37,9 @@ func (r *postgresRepository) Save(ctx context.Context, id string, e Employee, ac
 			if active != nil {
 				enabled = *active
 			}
-			row = q.QueryRow(ctx, `INSERT INTO employees(name,mitra_id,bidang_id,phone_hash,is_active,phone_encrypted) VALUES($1,$2,$3,$4,$5,$6) RETURNING employee_id`, e.Name, e.MitraID, nullableMitraID(e.BidangID), e.PhoneHash, enabled, e.PhoneEncrypted)
+			row = q.QueryRow(ctx, `INSERT INTO employees(name,mitra_id,bidang_id,phone_hash,is_active,phone_encrypted,nik) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING employee_id`, e.Name, e.MitraID, nullableMitraID(e.BidangID), e.PhoneHash, enabled, e.PhoneEncrypted, e.NIK)
 		} else {
-			row = q.QueryRow(ctx, `UPDATE employees SET name=$2,mitra_id=$3,bidang_id=$4,phone_hash=CASE WHEN $5='' THEN phone_hash ELSE $5 END,phone_encrypted=CASE WHEN $5='' THEN phone_encrypted ELSE $7 END,is_active=COALESCE($6,is_active),updated_at=now() WHERE employee_id=$1 RETURNING employee_id`, id, e.Name, e.MitraID, nullableMitraID(e.BidangID), e.PhoneHash, active, e.PhoneEncrypted)
+			row = q.QueryRow(ctx, `UPDATE employees SET nik=$8,name=$2,mitra_id=$3,bidang_id=$4,phone_hash=CASE WHEN $5='' THEN phone_hash ELSE $5 END,phone_encrypted=CASE WHEN $5='' THEN phone_encrypted ELSE $7 END,is_active=COALESCE($6,is_active),updated_at=now() WHERE employee_id=$1 RETURNING employee_id`, id, e.Name, e.MitraID, nullableMitraID(e.BidangID), e.PhoneHash, active, e.PhoneEncrypted, e.NIK)
 		}
 		var savedID string
 		if err := row.Scan(&savedID); errors.Is(err, pgx.ErrNoRows) {
@@ -45,7 +48,7 @@ func (r *postgresRepository) Save(ctx context.Context, id string, e Employee, ac
 			return err
 		}
 		// Revoke existing logins when credentials change or account is disabled.
-		if id != "" && (e.PhoneHash != "" || active != nil && !*active) {
+		if id != "" {
 			if _, err := q.Exec(ctx, `DELETE FROM sessions WHERE employee_id=$1`, savedID); err != nil {
 				return err
 			}

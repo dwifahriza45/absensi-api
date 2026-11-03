@@ -83,6 +83,8 @@ func (s *Service) Import(ctx context.Context, req ImportRequest) (ImportResult, 
 	valid := make([]Employee, 0, len(req.Rows))
 	skipped := make([]SkippedRow, 0)
 	seen := make(map[string]bool, len(req.Rows))
+	seenNIK := make(map[string]bool, len(req.Rows))
+	seenIDs := make(map[string]bool, len(req.Rows))
 
 	for i, row := range req.Rows {
 		rowNumber := i + 2 // baris 1 di Excel adalah judul kolom
@@ -91,6 +93,20 @@ func (s *Service) Import(ctx context.Context, req ImportRequest) (ImportResult, 
 
 		if name == "" {
 			skipped = append(skipped, SkippedRow{Row: rowNumber, Name: "(tanpa nama)", Reason: "Nama kosong"})
+			continue
+		}
+		nik := strings.TrimSpace(row.NIK)
+		if !shared.ValidNIK(nik) {
+			skipped = append(skipped, SkippedRow{Row: rowNumber, Name: name, Reason: "NIK Harus 16 Digit Angka"})
+			continue
+		}
+		employeeID := strings.TrimSpace(row.EmployeeID)
+		if employeeID != "" && !shared.IsPublicID(employeeID, "EMP") {
+			skipped = append(skipped, SkippedRow{Row: rowNumber, Name: name, Reason: "ID Karyawan Tidak Valid"})
+			continue
+		}
+		if seenNIK[nik] || employeeID != "" && seenIDs[employeeID] {
+			skipped = append(skipped, SkippedRow{Row: rowNumber, Name: name, Reason: "NIK atau ID karyawan sama dengan baris lain"})
 			continue
 		}
 		if len(phone) < minPhoneDigits {
@@ -109,12 +125,18 @@ func (s *Service) Import(ctx context.Context, req ImportRequest) (ImportResult, 
 			continue
 		}
 		seen[hash] = true
+		seenNIK[nik] = true
+		if employeeID != "" {
+			seenIDs[employeeID] = true
+		}
 
 		encrypted, err := s.hasher.Encrypt(phone)
 		if err != nil {
 			return ImportResult{}, err
 		}
 		valid = append(valid, Employee{
+			EmployeeID:     employeeID,
+			NIK:            nik,
 			PhoneEncrypted: encrypted,
 			Name:           name,
 			Mitra:          clean(row.Mitra, 80),
@@ -151,4 +173,8 @@ func (s *Service) GetByName(ctx context.Context, name string) (Employee, error) 
 		return Employee{}, ErrNotFound
 	}
 	return s.repo.FindByName(ctx, name)
+}
+
+func (s *Service) GetByNIK(ctx context.Context, nik string) (Employee, error) {
+	return s.repo.FindByNIK(ctx, strings.TrimSpace(nik))
 }

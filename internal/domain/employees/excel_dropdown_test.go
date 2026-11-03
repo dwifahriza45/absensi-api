@@ -8,7 +8,7 @@ import (
 
 func TestEmployeeWorkbookDropdowns(t *testing.T) {
 	options := FilterOptions{Mitra: []string{"Mitra, dengan koma", "Mitra lain"}, Bidang: []string{"Bidang A", "Bidang B"}}
-	for _, items := range [][]Response{nil, {{Name: "Karyawan", Phone: "6281234567890", Mitra: options.Mitra[0], Bidang: options.Bidang[0]}}} {
+	for _, items := range [][]Response{nil, {{NIK: "0123456789012345", EmployeeID: "EMP-20261103-000001", Name: "Karyawan", Phone: "6281234567890", Mitra: options.Mitra[0], Bidang: options.Bidang[0]}}} {
 		data, err := employeeWorkbook(items, options)
 		if err != nil {
 			t.Fatal(err)
@@ -18,7 +18,7 @@ func TestEmployeeWorkbookDropdowns(t *testing.T) {
 			t.Fatal(err)
 		}
 		rows, err := f.GetRows("Karyawan")
-		if err != nil || len(rows[0]) != 4 {
+		if err != nil || len(rows[0]) != 6 {
 			t.Fatal("wrong workbook columns", err)
 		}
 		validations, err := f.GetDataValidations("Karyawan")
@@ -41,7 +41,7 @@ func TestEmployeeWorkbookDropdowns(t *testing.T) {
 		if len(f.GetDefinedName()) != 2 {
 			t.Fatal("missing named ranges")
 		}
-		for _, cell := range []string{"B2", "B100", "B5001"} {
+		for _, cell := range []string{"B2", "B100", "B5001", "E2", "E100", "E5001"} {
 			styleID, err := f.GetCellStyle("Karyawan", cell)
 			if err != nil {
 				t.Fatal(err)
@@ -52,6 +52,15 @@ func TestEmployeeWorkbookDropdowns(t *testing.T) {
 			}
 		}
 		if len(items) > 0 {
+			nik, err := f.GetCellValue("Karyawan", "E2")
+			if err != nil || nik != "0123456789012345" {
+				t.Fatal("NIK digits changed", err)
+			}
+			kind, err := f.GetCellType("Karyawan", "E2")
+			if err != nil || kind != excelize.CellTypeSharedString {
+				t.Fatal("NIK must be stored as text", err)
+			}
+
 			value, err := f.GetCellValue("Karyawan", "B2")
 			if err != nil || value != "6281234567890" {
 				t.Fatal("phone digits changed", err)

@@ -46,7 +46,7 @@ Lokal tanpa container API: Go 1.27.3+, `cp .env.example .env`, `make db-up`, `ma
 
 ## Login dan session
 
-Admin login menggunakan email/password bcrypt seperti coffee-api. Karyawan login menggunakan **nama lengkap dan nomor HP terdaftar** dari data pegawai aktif. Nomor HP diverifikasi terhadap HMAC tersimpan. Kontak disimpan terenkripsi AES-GCM dan hanya dibuka pada API CRUD/list/detail admin. Nama dicocokkan persis tanpa membedakan huruf besar/kecil setelah spasi dirapikan. Bila nama aktif sama lebih dari satu, login ditolak agar tidak memilih pegawai yang salah; rapikan data nama sebelum login.
+Admin login menggunakan email/password bcrypt seperti coffee-api. Karyawan login menggunakan **nama lengkap dan NIK KTP 16 digit terdaftar** dari data pegawai aktif. NIK dicari lewat indeks unik. Kontak disimpan terenkripsi AES-GCM dan hanya dibuka pada API CRUD/list/detail admin. Nama dicocokkan persis tanpa membedakan huruf besar/kecil setelah spasi dirapikan. Nama yang sama tetap bisa login karena NIK membedakan identitas pegawai.
 
 Login mengirim cookie `access_token` dan `refresh_token` (`HttpOnly`, `SameSite=Lax`). Path cookie dipisah `/api/v1/admin` dan `/api/v1/karyawan`, sehingga kedua sesi bisa dipakai pada browser yang sama. Access token JWT berlaku 15 menit. Refresh token acak disimpan sebagai SHA-256 di tabel `sessions`, berlaku 7 hari untuk admin dan 90 hari untuk karyawan. Refresh merotasi token sekali pakai; logout mencabut sesi sehingga access token lama juga tidak berlaku. Akun nonaktif tidak dapat memakai sesi maupun refresh.
 
@@ -61,7 +61,7 @@ curl -b admin.cookies -c admin.cookies -X POST http://localhost:8082/api/v1/admi
 curl -b admin.cookies -X POST http://localhost:8082/api/v1/admin/auth/logout
 
 curl -c karyawan.cookies -H 'Content-Type: application/json' \
-  -d '{"fullname":"Nama Lengkap Karyawan","phone":"081234567890"}' \
+  -d '{"fullname":"Nama Lengkap Karyawan","nik":"0123456789012345"}' \
   http://localhost:8082/api/v1/karyawan/auth/login
 ```
 
@@ -69,7 +69,7 @@ curl -c karyawan.cookies -H 'Content-Type: application/json' \
 
 Response JSON mengikuti `coffee-api`: `code` numerik sesuai HTTP status, `status` **OK/NOK**, `message`, `error` boolean, serta `data`/`total`/`valid` bila tersedia. Error tidak lagi berupa objek nested; detail validasi berada di `valid` dengan key yang sama seperti field request. Lihat [kontrak request/response](docs/api-response.md).
 
-Field kosong atau hanya spasi menghasilkan HTTP 400 dan seluruh pesan field sekaligus. Email/nomor HP juga diperiksa formatnya sebelum autentikasi. Password tidak di-trim dan tidak pernah dikembalikan dalam error. Login memakai batas body 4 KiB; JSON lainnya tetap 1 MiB, import 4 MiB. Route lama tanpa prefix role sudah dipindah; frontend perlu memperbarui URL.
+Field kosong atau hanya spasi menghasilkan HTTP 400 dan seluruh pesan field sekaligus. Email/NIK juga diperiksa formatnya sebelum autentikasi. Password tidak di-trim dan tidak pernah dikembalikan dalam error. Login memakai batas body 4 KiB; JSON lainnya tetap 1 MiB, import 4 MiB. Route lama tanpa prefix role sudah dipindah; frontend perlu memperbarui URL.
 
 | Method | Path | Akses / body |
 |---|---|---|
@@ -80,18 +80,18 @@ Field kosong atau hanya spasi menghasilkan HTTP 400 dan seluruh pesan field seka
 | GET | `/api/v1/admin/auth/me` | Admin |
 | GET | `/api/v1/admin/employees` | Admin; `mitra,bidang,bidang_id,q` |
 | GET | `/api/v1/admin/employees/filter-options` | Admin |
-| POST | `/api/v1/admin/employees/import` | Admin; `{rows:[{name,mitra,bidang,phone}],deactivateMissing}` |
+| POST | `/api/v1/admin/employees/import` | Admin; `{rows:[{name,nik,mitra,bidang,phone,employee_id?}],deactivateMissing}` |
 | GET | `/api/v1/admin/attendances` | Admin; `from,to,mitra,bidang,q` |
 | GET | `/api/v1/admin/attendances/version` | Admin; `date` |
 | GET | `/api/v1/admin/photos/{id}` | Admin |
 | GET | `/api/v1/karyawan/employees/search` | Publik; `q` minimal 3 huruf, maksimal 4 hasil |
-| POST | `/api/v1/karyawan/auth/login` | Publik; `{fullname,phone}` |
+| POST | `/api/v1/karyawan/auth/login` | Publik; `{fullname,nik}` |
 | POST | `/api/v1/karyawan/auth/refresh` | Cookie refresh karyawan |
 | POST | `/api/v1/karyawan/auth/logout` | Cookie refresh karyawan |
 | GET | `/api/v1/karyawan/auth/me` | Karyawan |
 | GET | `/api/v1/karyawan/attendances/today` | Karyawan |
 | POST | `/api/v1/karyawan/attendances/check-in` | Karyawan; multipart `selfie,lat,lng,accuracy` |
-| POST | `/api/v1/karyawan/attendances/check-out` | Karyawan; multipart di atas + `reason` |
+| POST | `/api/v1/karyawan/attendances/check-out` | Karyawan; multipart di atas; alasan diambil dari permintaan pulang awal |
 | POST | `/api/v1/karyawan/attendances/early-leave` | Karyawan; `{reason}` |
 | POST | `/api/v1/karyawan/work-reports` | Karyawan; multipart `session_no,photo` |
 
@@ -99,9 +99,9 @@ Karyawan hanya mengakses profil dan aktivitas absensinya sendiri, termasuk foto 
 
 ## Aturan yang dipertahankan
 
-Waktu absensi memakai waktu server `APP_TIMEZONE`. Jadwal kerja dan jumlah sesi foto diatur lewat `SCHEDULE_*`. Foto sesi yang dikirim ulang tidak membuat data ganda. Selfie dan lokasi wajib; akurasi di atas 100 m ditandai perlu ditinjau. Pulang tidak dibatasi jam selesai, tetapi alasan wajib bila sesi foto belum lengkap.
+Waktu absensi memakai waktu server `APP_TIMEZONE`. Jadwal kerja dan jumlah sesi foto diatur lewat `SCHEDULE_*`. Foto sesi yang dikirim ulang tidak membuat data ganda. Selfie dan lokasi wajib; akurasi di atas 100 m ditandai perlu ditinjau. Pulang tidak dibatasi jam selesai, tetapi seluruh sesi laporan harus lengkap kecuali sudah mengajukan pulang lebih awal.
 
-Nomor HP pada import tetap di-hash dengan HMAC untuk identitas data import, dan dipakai untuk verifikasi login. Jangan mengganti `PHONE_HASH_SECRET` setelah import; secret ini juga menurunkan kunci enkripsi kontak dan harus disimpan dalam backup yang aman. Nomor lama yang hanya mempunyai hash perlu diisi ulang/import untuk bisa dibaca admin. Limiter login admin sepuluh dan karyawan lima percobaan per akun/IP selama 15 menit ditambah limit karyawan 3000 request per IP per menit dan admin 100 request per IP per menit disimpan di memori, sehingga deployment beberapa replika membutuhkan limiter bersama. Jadwal masih sama untuk semua penempatan.
+NIK menjadi identitas unik import dan kredensial login. Nomor HP tetap di-hash dengan HMAC untuk pencocokan kontak, termasuk melengkapi NIK data lama. Jangan mengganti `PHONE_HASH_SECRET` setelah import; secret ini juga menurunkan kunci enkripsi kontak dan harus disimpan dalam backup yang aman. Nomor lama yang hanya mempunyai hash perlu diisi ulang/import untuk bisa dibaca admin. Limiter login admin sepuluh dan karyawan lima percobaan per akun/IP selama 15 menit ditambah limit karyawan 3000 request per IP per menit dan admin 100 request per IP per menit disimpan di memori, sehingga deployment beberapa replika membutuhkan limiter bersama. Jadwal masih sama untuk semua penempatan.
 
 ## ID bisnis dan relasi
 
@@ -180,7 +180,7 @@ make dev-down # volume data tetap tersimpan
 
 ## Keamanan aplikasi
 
-Lihat [catatan audit dan batas perlindungan](docs/security.md). Login karyawan sekarang wajib `{fullname,phone}`. Cookie menjadi satu-satunya tempat token dikembalikan; body login/refresh tidak lagi memuat `access_token`/`refresh_token`. Foto tidak boleh di-cache, dan gambar baru dinormalisasi untuk membuang metadata/trailer. Go minimum menjadi **1.27.3** untuk memakai runtime yang sudah ditambal.
+Lihat [catatan audit dan batas perlindungan](docs/security.md). Login karyawan sekarang wajib `{fullname,nik}`. Cookie menjadi satu-satunya tempat token dikembalikan; body login/refresh tidak lagi memuat `access_token`/`refresh_token`. Foto tidak boleh di-cache, dan gambar baru dinormalisasi untuk membuang metadata/trailer. Go minimum menjadi **1.27.3** untuk memakai runtime yang sudah ditambal.
 
 Compose production memaksa cookie Secure dan APP_ENV production, sehingga membutuhkan HTTPS. Startup menolak secret contoh dan password admin seed. Sebelum pertama menjalankan app production: jalankan DB dan migration, ganti hash password admin melalui koneksi DB tepercaya (bcrypt/pgcrypto), isi secret acak, lalu jalankan app. Compose dev tetap bisa dipakai lewat HTTP lokal untuk pengembangan.
 
@@ -249,8 +249,14 @@ Rekap menghasilkan satu PDF A4 dengan satu halaman per karyawan/tanggal; mencaku
 
 Batas sebulan bukan jaminan ukuran file atau durasi: 1.500 karyawan x 31 hari dapat menghasilkan 46.500 halaman. Uji kapasitas pada VPS produksi sebelum menyatakan aman pada konfigurasi 8 vCPU/8 GB, dan gunakan filter Mitra/Bidang/nama untuk memperkecil laporan bila diperlukan. Browser/proxy dan ruang penyimpanan unduhan juga memengaruhi proses. Rekap tidak membuat file sementara di storage aplikasi.
 
-Untuk Rekap PDF dan Export Excel absensi, admin wajib memilih satu Mitra dan satu Bidang; pilihan Semua tidak dapat dipakai untuk unduhan. Rekap juga memvalidasi kedua filter di API sebelum mengambil data. Batas 31 hari tetap berlaku.
+Rekap PDF absensi wajib memilih satu Mitra dan mencakup semua bidang dalam mitra tersebut; filter Bidang diabaikan untuk rekap. API juga memvalidasi Mitra sebelum mengambil data. Export Excel tetap wajib memilih satu Mitra dan satu Bidang. Batas 31 hari tetap berlaku.
 
 ## Deployment VPS
 
 Untuk production alotive.com, gunakan [panduan deploy VPS](docs/deploy-vps.md): Compose terpisah, API port 8087, network absen, MinIO private, dan publish image GitHub Actions dengan tag SHA.
+
+### Login pegawai dengan NIK KTP
+
+Terapkan migration `000011_employee_nik` sebelum menjalankan versi ini. Admin mengisi NIK KTP asli 16 digit yang unik pada form karyawan atau import Excel; NIK dapat diedit dan disertakan pada export/template. Data lama tetap belum memiliki NIK sampai dilengkapi. Migrasi mencabut sesi pegawai; sesi admin tetap berlaku. Login pegawai sekarang menggunakan `fullname` + `nik`, tanpa nomor HP. Detail format import, perubahan NIK tanpa kehilangan riwayat, dan response ada di [API karyawan](docs/employees-api.md#import-dan-perpindahan-login-ke-nik).
+
+Absen pulang biasa hanya dapat dilanjutkan setelah seluruh sesi laporan kerja lengkap. Jika belum lengkap, tampil notifikasi kuning tanpa pilihan alasan. API juga menolak upaya melewati aturan dengan mengirim alasan langsung. Permintaan Minta Pulang Lebih Awal tetap tersedia; setelah dikirim, pegawai dapat absen pulang dengan alasan dari permintaan tersebut.

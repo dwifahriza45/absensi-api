@@ -36,6 +36,7 @@ func newValidator() *validator.Validate {
 		normalized := shared.NormalizePhone(raw)
 		return phoneCharacters.MatchString(raw) && strings.HasPrefix(normalized, "628") && len(normalized) >= 10 && len(normalized) <= 16
 	})
+	_ = v.RegisterValidation("nik", func(f validator.FieldLevel) bool { return shared.ValidNIK(f.Field().String()) })
 	return v
 }
 
@@ -72,6 +73,8 @@ func Struct(request any) error {
 			fields[key] = label + " Wajib Diisi"
 		case "email":
 			fields[key] = "Format Email Tidak Valid"
+		case "nik":
+			fields[key] = "NIK Harus 16 Digit Angka"
 		case "phone":
 			fields[key] = "Format Nomor HP Tidak Valid"
 		case "maxbytes":

@@ -13,17 +13,17 @@ Jalankan dari folder project API. Isi username dan SHA sesuai hasil Actions:
 ```bash
 python3 scripts/setup_vps.py --dockerhub-user USERNAME --tag sha-COMMIT_SHA_LENGKAP
 docker network inspect absen >/dev/null 2>&1 || docker network create absen
-docker compose --env-file .env.vps -f docker-compose.vps.yml config --quiet
-docker compose --env-file .env.vps -f docker-compose.vps.yml pull
-docker compose --env-file .env.vps -f docker-compose.vps.yml up -d db minio
-docker compose --env-file .env.vps -f docker-compose.vps.yml --profile tools run --rm migrate
+docker compose --env-file .env -f docker-compose.vps.yml config --quiet
+docker compose --env-file .env -f docker-compose.vps.yml pull
+docker compose --env-file .env -f docker-compose.vps.yml up -d db minio
+docker compose --env-file .env -f docker-compose.vps.yml --profile tools run --rm migrate
 python3 scripts/set_admin_password.py
-docker compose --env-file .env.vps -f docker-compose.vps.yml up -d app
-docker compose --env-file .env.vps -f docker-compose.vps.yml ps -a
+docker compose --env-file .env -f docker-compose.vps.yml up -d app
+docker compose --env-file .env -f docker-compose.vps.yml ps -a
 curl --fail http://127.0.0.1:8087/api/v1/admin/health
 ```
 
-Setup menghasilkan `.env.vps` privat dengan secret acak dan akses aplikasi MinIO terpisah dari root. Tidak menimpa konfigurasi yang sudah ada. Origin default HTTPS alotive.com dan www.alotive.com; sesuaikan jika domain berubah. Jangan mengganti PHONE_HASH_SECRET setelah karyawan dibuat karena dipakai untuk data nomor HP. Simpan seluruh `.env.vps` bersama backup secara aman.
+Setup menghasilkan `.env` privat dengan secret acak dan akses aplikasi MinIO terpisah dari root. Tidak menimpa konfigurasi yang sudah ada. Origin default HTTPS alotive.com dan www.alotive.com; sesuaikan jika domain berubah. Jangan mengganti PHONE_HASH_SECRET setelah karyawan dibuat karena dipakai untuk data nomor HP. Simpan seluruh `.env` bersama backup secara aman.
 
 Password admin diminta secara interaktif oleh script, tidak masuk shell history. Login email awal `admin@absensi.local`. API production menolak password seed bawaan, sehingga langkah ganti password wajib. MinIO init otomatis saat app dimulai; status Exited (0) pada service init normal.
 
@@ -57,14 +57,14 @@ Frontend admin/pegawai memakai API_UPSTREAM=http://absensi-api:8087 dan API_NETW
 
 ## Update
 
-Backup database, foto, dan `.env.vps` terlebih dahulu (lihat panduan backup). Ubah IMAGE_TAG, MINIO_IMAGE, MINIO_MC_IMAGE ke SHA yang telah berhasil dipublish, tanpa mengubah secret/bucket/prefix. Pull image, jalankan migration, lalu up:
+Backup database, foto, dan `.env` terlebih dahulu (lihat panduan backup). Ubah IMAGE_TAG, MINIO_IMAGE, MINIO_MC_IMAGE ke SHA yang telah berhasil dipublish, tanpa mengubah secret/bucket/prefix. Pull image, jalankan migration, lalu up:
 
 ```bash
-docker compose --env-file .env.vps -f docker-compose.vps.yml pull
-docker compose --env-file .env.vps -f docker-compose.vps.yml --profile tools run --rm migrate
-docker compose --env-file .env.vps -f docker-compose.vps.yml up -d
+docker compose --env-file .env -f docker-compose.vps.yml pull
+docker compose --env-file .env -f docker-compose.vps.yml --profile tools run --rm migrate
+docker compose --env-file .env -f docker-compose.vps.yml up -d
 ```
 
-Untuk backup otomatis, gunakan file Compose `docker-compose.vps.yml`, env file `.env.vps`, dan nama project `absensi-production` pada konfigurasi backup. Jadwal backup belum diaktifkan otomatis.
+Untuk backup otomatis, gunakan file Compose `docker-compose.vps.yml`, env file `.env`, dan nama project `absensi-production` pada konfigurasi backup. Jadwal backup belum diaktifkan otomatis.
 
-Konfigurasi VPS S3 tidak memakai `STORAGE_DIR` atau volume foto lokal. Backup foto mengambil objek dari MinIO melalui API S3. Dukungan storage lokal pada kode tetap tersedia untuk alat migrasi/restore. Jika `.env.vps` dibuat sebelumnya, baris `STORAGE_DIR` boleh dihapus; jangan menghapus volume lama sebelum memastikan backup dan migrasi selesai.
+Konfigurasi VPS S3 tidak memakai `STORAGE_DIR` atau volume foto lokal. Backup foto mengambil objek dari MinIO melalui API S3. Dukungan storage lokal pada kode tetap tersedia untuk alat migrasi/restore. Jika `.env` dibuat sebelumnya, baris `STORAGE_DIR` boleh dihapus; jangan menghapus volume lama sebelum memastikan backup dan migrasi selesai.

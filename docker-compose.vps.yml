@@ -3,7 +3,7 @@ name: absensi-production
 services:
   app:
     image: "${DOCKER_IMAGE:?Set DOCKER_IMAGE}:${IMAGE_TAG:?Set IMAGE_TAG}"
-    env_file: .env.vps
+    env_file: .env
     # Foto VPS disimpan di private bucket MinIO.
     environment:
       APP_ENV: production

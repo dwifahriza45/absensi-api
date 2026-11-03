@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -45,8 +46,13 @@ func TestAdminCookieLifecycle(t *testing.T) {
 			t.Fatalf("%s: status %d, want %d: %s", path, res.StatusCode, want, b)
 		}
 	}
+	var email string
+	if err := db.QueryRow(context.Background(), `SELECT email FROM users LIMIT 1`).Scan(&email); err != nil {
+		t.Fatal(err)
+	}
+	credentials, _ := json.Marshal(map[string]string{"email": email, "password": "Admin123!"})
 	for range 5 {
-		request("POST", "login", `{"email":"admin@absensi.local","password":"Admin123!"}`, 200)
+		request("POST", "login", string(credentials), 200)
 		request("GET", "me", "", 200)
 	}
 	req, _ := http.NewRequest("GET", base+"me", nil)

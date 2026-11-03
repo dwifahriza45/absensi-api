@@ -23,7 +23,7 @@ func (s *Service) Save(ctx context.Context, id string, req WriteRequest) (Respon
 	if id != "" && !shared.IsPublicID(id, "EMP") {
 		return Response{}, ErrNotFound
 	}
-	e := Employee{Name: req.Name, MitraID: req.MitraID, BidangID: req.BidangID}
+	e := Employee{NIK: req.NIK, Name: req.Name, MitraID: req.MitraID, BidangID: req.BidangID}
 	if req.Phone != "" {
 		e.PhoneHash = s.hasher.Hash(req.Phone)
 		var err error
@@ -52,6 +52,7 @@ func (s *Service) adminResponse(e Employee) (Response, error) {
 		return Response{}, err
 	}
 	result.Phone = phone
+	result.NIK = e.NIK
 	return result, nil
 }
 func (s *Service) AdminDetail(ctx context.Context, id string) (Response, error) {

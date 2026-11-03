@@ -13,9 +13,14 @@ func TestCheckOutRulesWithoutTimeGate(t *testing.T) {
 		now := time.Date(2026, 11, 1, hour, 0, 0, 0, time.UTC)
 		for _, done := range []int{0, 2, 3} {
 			allowed, reason := s.checkOutRules(now, Attendance{}, done)
-			if !allowed || reason != (done < 3) {
+			if allowed != (done >= 3) || reason {
 				t.Fatalf("hour=%d done=%d allowed=%v reason=%v", hour, done, allowed, reason)
 			}
+		}
+		earlyReason := "Sakit"
+		early := Attendance{EarlyLeaveRequestedAt: &now, EarlyLeaveReason: &earlyReason}
+		if allowed, reason := s.checkOutRules(now, early, 0); !allowed || reason {
+			t.Fatal("early leave must remain available")
 		}
 		if allowed, _ := s.checkOutRules(now, Attendance{CheckOutAt: &now}, 3); allowed {
 			t.Fatal("already checked out must not be allowed")

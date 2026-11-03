@@ -53,7 +53,7 @@ func TestEmployeeCRUDAdmin(t *testing.T) {
 		}
 		return result.Data
 	}
-	body := `{"name":"CRUD Employee","phone":"081234567890","mitra_id":"` + mitraID + `","bidang_id":"` + bidangID + `"}`
+	body := `{"nik":"0123456789012345","name":"CRUD Employee","phone":"081234567890","mitra_id":"` + mitraID + `","bidang_id":"` + bidangID + `"}`
 	for _, method := range []string{"POST", "GET", "PUT", "DELETE"} {
 		path := ""
 		if method != "POST" {
@@ -85,7 +85,7 @@ func TestEmployeeCRUDAdmin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	update := `{"name":"Edited Employee","mitra_id":"` + mitraID + `","bidang_id":"` + bidangID + `","phone":"081234567891"}`
+	update := `{"nik":"0123456789012346","name":"Edited Employee","mitra_id":"` + mitraID + `","bidang_id":"` + bidangID + `","phone":"081234567891"}`
 	call("PUT", "/"+e.EmployeeID, update, true, 200)
 	if _, err := manager.Parse(ctx, employeeAccess); err == nil {
 		t.Fatal("phone edit did not revoke login")
@@ -102,7 +102,7 @@ func TestEmployeeCRUDAdmin(t *testing.T) {
 		t.Fatal(err)
 	}
 	call("DELETE", "/"+e.EmployeeID, "", true, 409)
-	call("PUT", "/"+e.EmployeeID, `{"name":"Inactive Employee","mitra_id":"`+mitraID+`","bidang_id":"`+bidangID+`","isActive":false}`, true, 200)
+	call("PUT", "/"+e.EmployeeID, `{"nik":"0123456789012346","name":"Inactive Employee","mitra_id":"`+mitraID+`","bidang_id":"`+bidangID+`","isActive":false}`, true, 200)
 	if _, err := manager.Parse(ctx, employeeAccess); err == nil {
 		t.Fatal("deleted employee session remains valid")
 	}
@@ -123,7 +123,7 @@ func TestEmployeeCRUDAdmin(t *testing.T) {
 	if len(list) != 1 || list[0].IsActive {
 		t.Fatal("inactive employee not listed")
 	}
-	call("PUT", "/"+e.EmployeeID, `{"name":"Restored Employee","mitra_id":"`+mitraID+`","bidang_id":"`+bidangID+`","isActive":true}`, true, 200)
+	call("PUT", "/"+e.EmployeeID, `{"nik":"0123456789012346","name":"Restored Employee","mitra_id":"`+mitraID+`","bidang_id":"`+bidangID+`","isActive":true}`, true, 200)
 	call("GET", "/"+e.EmployeeID, "", true, 200)
 	call("DELETE", "/EMP-20000101-999999", "", true, 404)
 }

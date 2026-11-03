@@ -75,18 +75,18 @@ func (s *Recap) rows(ctx context.Context, r *http.Request) ([]recapRow, error) {
 	if err := ValidateMonthRange(from, to); err != nil {
 		return nil, err
 	}
-	if strings.TrimSpace(q.Get("mitra")) == "" || strings.TrimSpace(q.Get("bidang")) == "" {
-		return nil, apperror.BadRequest("export_filters_required", "Silakan pilih Mitra dan Bidang terlebih dahulu sebelum mengunduh rekap atau mengekspor data absensi.")
+	if strings.TrimSpace(q.Get("mitra")) == "" {
+		return nil, apperror.BadRequest("export_filters_required", "Silakan pilih Mitra terlebih dahulu sebelum mengunduh rekap.")
 	}
 	status := q.Get("status")
 	if status != "" && status != "hadir" && recapLabels[status] == "" {
 		return nil, apperror.BadRequest("invalid_status", "Status absensi tidak valid.")
 	}
-	items, err := s.service.AdminList(ctx, AdminFilter{From: from, To: to, Mitra: q.Get("mitra"), Bidang: q.Get("bidang"), Query: q.Get("q")})
+	items, err := s.service.AdminList(ctx, AdminFilter{From: from, To: to, Mitra: q.Get("mitra"), Query: q.Get("q")})
 	if err != nil {
 		return nil, err
 	}
-	staff, err := s.employees(ctx, AdminFilter{Mitra: q.Get("mitra"), Bidang: q.Get("bidang"), Query: q.Get("q")})
+	staff, err := s.employees(ctx, AdminFilter{Mitra: q.Get("mitra"), Query: q.Get("q")})
 	if err != nil {
 		return nil, err
 	}
