@@ -12,7 +12,7 @@ scp -r ./migrations vps1:~/absensi-api/
 
 # Sync File FROM LOCAL TO VPS
 
-rsync -av ./migrations/ vps1:~/coffe-api/migrations/
+rsync -av ./migrations/ vps1:~/absensi-api/migrations/
 
 docker compose --profile tools run --rm migrate
 

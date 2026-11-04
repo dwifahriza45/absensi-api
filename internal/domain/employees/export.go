@@ -101,6 +101,10 @@ func employeeWorkbook(items []Response, options FilterOptions) ([]byte, error) {
 	if err = f.SetColWidth("Karyawan", "A", "F", 26); err != nil {
 		return nil, err
 	}
+	// Keep the identifier for re-importing edits, but hide it in both downloads.
+	if err = f.SetColVisible("Karyawan", "F", false); err != nil {
+		return nil, err
+	}
 	for i, item := range items {
 		for j, value := range []string{item.Name, item.Phone, item.Mitra, item.Bidang, item.NIK, item.EmployeeID} {
 			cell, _ := excelize.CoordinatesToCellName(j+1, i+2)
@@ -120,7 +124,7 @@ func employeeWorkbook(items []Response, options FilterOptions) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Template uses the same styled four-column workbook as employee exports.
+// Template uses the same columns, styles, and visibility as employee exports.
 func (h *Handler) Template(w http.ResponseWriter, r *http.Request) {
 	options, err := h.svc.FilterOptions(r.Context())
 	if err != nil {

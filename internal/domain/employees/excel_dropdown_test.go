@@ -21,6 +21,13 @@ func TestEmployeeWorkbookDropdowns(t *testing.T) {
 		if err != nil || len(rows[0]) != 6 {
 			t.Fatal("wrong workbook columns", err)
 		}
+		for i, want := range []string{"NAMA LENGKAP", "NOMOR HP", "MITRA", "BIDANG", "NIK", "ID KARYAWAN"} {
+			column, _ := excelize.ColumnNumberToName(i + 1)
+			visible, err := f.GetColVisible("Karyawan", column)
+			if err != nil || visible != (i < 5) || rows[0][i] != want {
+				t.Fatalf("column %s: header=%q visible=%v err=%v", column, rows[0][i], visible, err)
+			}
+		}
 		validations, err := f.GetDataValidations("Karyawan")
 		if err != nil || len(validations) != 2 {
 			t.Fatal("missing master dropdowns", err)
@@ -52,6 +59,10 @@ func TestEmployeeWorkbookDropdowns(t *testing.T) {
 			}
 		}
 		if len(items) > 0 {
+			id, err := f.GetCellValue("Karyawan", "F2")
+			if err != nil || id != items[0].EmployeeID {
+				t.Fatal("hidden employee ID must be preserved for re-import", err)
+			}
 			nik, err := f.GetCellValue("Karyawan", "E2")
 			if err != nil || nik != "0123456789012345" {
 				t.Fatal("NIK digits changed", err)
