@@ -8,6 +8,7 @@ import (
 )
 
 func (s *Service) Save(ctx context.Context, id string, req WriteRequest) (Response, error) {
+	req.Normalize()
 	if err := validation.Struct(&req); err != nil {
 		return Response{}, err
 	}
@@ -16,9 +17,6 @@ func (s *Service) Save(ctx context.Context, id string, req WriteRequest) (Respon
 	}
 	if !shared.IsPublicID(req.BidangID, "BID") {
 		return Response{}, apperror.Validation(map[string]string{"bidang_id": "Bidang Tidak Valid"})
-	}
-	if id == "" && req.Phone == "" {
-		return Response{}, apperror.Validation(map[string]string{"phone": "Nomor HP Wajib Diisi"})
 	}
 	if id != "" && !shared.IsPublicID(id, "EMP") {
 		return Response{}, ErrNotFound

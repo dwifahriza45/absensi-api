@@ -15,6 +15,7 @@ Jalankan file sesuai nomor versi. Setiap versi memiliki pasangan `.up.sql` untuk
 
 | `000010_instansi_to_mitra` | Rename master menjadi mitra, FK mitra_id dan kode MTR; pertahankan UUID/data/counter | Pulihkan nama instansi, FK instansi_id dan kode INT |
 
+| `000012_employee_optional_phone` | Nomor HP karyawan opsional; nomor terisi tetap unik | Wajib isi kontak kosong sebelum rollback |
 | `000011_employee_nik` | NIK KTP unik 16 digit, nullable untuk data lama; cabut sesi pegawai | Hapus NIK dan cabut sesi pegawai |
 
 ## Struktur setelah seluruh migration

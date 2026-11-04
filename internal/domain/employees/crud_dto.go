@@ -4,8 +4,8 @@ import (
 	"strings"
 )
 
-// WriteRequest uses an existing institution business ID. Phone is required on
-// create; omitting it on update preserves the existing contact phone.
+// WriteRequest uses an existing institution business ID. Phone is optional;
+// leaving it blank on update preserves the existing contact phone.
 type WriteRequest struct {
 	NIK     string `json:"nik" validate:"required,nik" label:"NIK"`
 	Name    string `json:"name" validate:"required,max=80" label:"Nama Lengkap"`

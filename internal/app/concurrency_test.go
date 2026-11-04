@@ -66,7 +66,7 @@ func concurrencyDB(t *testing.T) (*pgxpool.Pool, *pgxpool.Pool) {
 	if _, err = root.Exec(ctx, "CREATE EXTENSION IF NOT EXISTS pgcrypto"); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"000001_init.up.sql", "000002_admin_sessions.up.sql", "000003_instansi.up.sql", "000004_public_ids.up.sql", "000005_employee_login_index.up.sql", "000006_business_key_references.up.sql", "000007_employee_phone_encryption.up.sql", "000008_bidang.up.sql", "000009_remove_employee_daerah.up.sql", "000010_instansi_to_mitra.up.sql", "000011_employee_nik.up.sql"} {
+	for _, name := range []string{"000001_init.up.sql", "000002_admin_sessions.up.sql", "000003_instansi.up.sql", "000004_public_ids.up.sql", "000005_employee_login_index.up.sql", "000006_business_key_references.up.sql", "000007_employee_phone_encryption.up.sql", "000008_bidang.up.sql", "000009_remove_employee_daerah.up.sql", "000010_instansi_to_mitra.up.sql", "000011_employee_nik.up.sql", "000012_employee_optional_phone.up.sql"} {
 		sql, err := os.ReadFile(filepath.Join("../../migrations", name))
 		if err != nil {
 			t.Fatal(err)

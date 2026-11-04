@@ -109,7 +109,7 @@ func (s *Service) Import(ctx context.Context, req ImportRequest) (ImportResult, 
 			skipped = append(skipped, SkippedRow{Row: rowNumber, Name: name, Reason: "NIK atau ID karyawan sama dengan baris lain"})
 			continue
 		}
-		if len(phone) < minPhoneDigits {
+		if strings.TrimSpace(row.Phone) != "" && len(phone) < minPhoneDigits {
 			skipped = append(skipped, SkippedRow{Row: rowNumber, Name: name, Reason: "Nomor HP tidak valid"})
 			continue
 		}
@@ -119,8 +119,11 @@ func (s *Service) Import(ctx context.Context, req ImportRequest) (ImportResult, 
 			continue
 		}
 
-		hash := s.hasher.Hash(phone)
-		if seen[hash] {
+		hash := ""
+		if phone != "" {
+			hash = s.hasher.Hash(phone)
+		}
+		if hash != "" && seen[hash] {
 			skipped = append(skipped, SkippedRow{Row: rowNumber, Name: name, Reason: "Nomor HP sama dengan baris lain"})
 			continue
 		}
@@ -130,9 +133,13 @@ func (s *Service) Import(ctx context.Context, req ImportRequest) (ImportResult, 
 			seenIDs[employeeID] = true
 		}
 
-		encrypted, err := s.hasher.Encrypt(phone)
-		if err != nil {
-			return ImportResult{}, err
+		encrypted := ""
+		if phone != "" {
+			var err error
+			encrypted, err = s.hasher.Encrypt(phone)
+			if err != nil {
+				return ImportResult{}, err
+			}
 		}
 		valid = append(valid, Employee{
 			EmployeeID:     employeeID,

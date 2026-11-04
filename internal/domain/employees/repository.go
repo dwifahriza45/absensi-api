@@ -35,7 +35,7 @@ func NewRepository(db *pgxpool.Pool) Repository {
 	return &postgresRepository{db: db}
 }
 
-const selectColumns = `e.id::text, e.employee_id, COALESCE(e.nik,''), e.name, COALESCE(e.mitra_id::text, ''), COALESCE(i.name, ''), COALESCE(e.bidang_id,''), COALESCE(b.name,''), e.phone_hash, e.phone_encrypted, e.is_active, e.created_at, e.updated_at, EXISTS(SELECT 1 FROM attendances a WHERE a.employee_id=e.employee_id)`
+const selectColumns = `e.id::text, e.employee_id, COALESCE(e.nik,''), e.name, COALESCE(e.mitra_id::text, ''), COALESCE(i.name, ''), COALESCE(e.bidang_id,''), COALESCE(b.name,''), COALESCE(e.phone_hash,''), e.phone_encrypted, e.is_active, e.created_at, e.updated_at, EXISTS(SELECT 1 FROM attendances a WHERE a.employee_id=e.employee_id)`
 const employeeSource = `employees e LEFT JOIN mitra i ON i.mitra_id = e.mitra_id LEFT JOIN bidang b ON b.bidang_id = e.bidang_id`
 
 func scanEmployee(row pgx.Row) (Employee, error) {
@@ -176,7 +176,7 @@ func (r *postgresRepository) Import(ctx context.Context, rows []Employee, deacti
 			}
 		} else {
 			// Match NIK first; a legacy employee without NIK can be filled using its existing contact.
-			err := tx.QueryRow(ctx, `SELECT employee_id FROM employees WHERE nik=$1 OR (nik IS NULL AND phone_hash=$2) ORDER BY (nik=$1) DESC NULLS LAST LIMIT 1`, e.NIK, e.PhoneHash).Scan(&target)
+			err := tx.QueryRow(ctx, `SELECT employee_id FROM employees WHERE nik=$1 OR (nik IS NULL AND $2<>'' AND phone_hash=$2) ORDER BY (nik=$1) DESC NULLS LAST LIMIT 1`, e.NIK, e.PhoneHash).Scan(&target)
 			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 				return result, err
 			}
@@ -186,9 +186,9 @@ func (r *postgresRepository) Import(ctx context.Context, rows []Employee, deacti
 				return result, apperror.BadRequest("duplicate_employee", "File berisi lebih dari satu baris untuk karyawan yang sama.")
 			}
 			targets[target] = true
-			batch.Queue(`UPDATE employees SET name=$2,mitra_id=$3,bidang_id=$4,phone_hash=$5,phone_encrypted=$6,nik=$7,is_active=TRUE,updated_at=now() WHERE employee_id=$1 RETURNING false,employee_id`, target, e.Name, nullableMitraID(mitraIDs[strings.TrimSpace(e.Mitra)]), nullableMitraID(bidangIDs[strings.TrimSpace(e.Bidang)]), e.PhoneHash, e.PhoneEncrypted, e.NIK)
+			batch.Queue(`UPDATE employees SET name=$2,mitra_id=$3,bidang_id=$4,phone_hash=NULLIF($5,''),phone_encrypted=$6,nik=$7,is_active=TRUE,updated_at=now() WHERE employee_id=$1 RETURNING false,employee_id`, target, e.Name, nullableMitraID(mitraIDs[strings.TrimSpace(e.Mitra)]), nullableMitraID(bidangIDs[strings.TrimSpace(e.Bidang)]), e.PhoneHash, e.PhoneEncrypted, e.NIK)
 		} else {
-			batch.Queue(`INSERT INTO employees(name,mitra_id,bidang_id,phone_hash,phone_encrypted,nik) VALUES($1,$2,$3,$4,$5,$6) RETURNING true,employee_id`, e.Name, nullableMitraID(mitraIDs[strings.TrimSpace(e.Mitra)]), nullableMitraID(bidangIDs[strings.TrimSpace(e.Bidang)]), e.PhoneHash, e.PhoneEncrypted, e.NIK)
+			batch.Queue(`INSERT INTO employees(name,mitra_id,bidang_id,phone_hash,phone_encrypted,nik) VALUES($1,$2,$3,NULLIF($4,''),$5,$6) RETURNING true,employee_id`, e.Name, nullableMitraID(mitraIDs[strings.TrimSpace(e.Mitra)]), nullableMitraID(bidangIDs[strings.TrimSpace(e.Bidang)]), e.PhoneHash, e.PhoneEncrypted, e.NIK)
 		}
 	}
 
