@@ -42,7 +42,7 @@ func TestRemoveDaerahMigrationPreservesEmployeeAndAttendance(t *testing.T) {
 		t.Fatal("daerah column still exists")
 	}
 	after, err := employees.NewRepository(db).FindByID(ctx, id)
-	if err != nil || before.ID != after.ID || before.EmployeeID != after.EmployeeID || before.Name != after.Name || before.PhoneHash != after.PhoneHash || !after.HasAttendance {
+	if err != nil || before.ID != after.ID || before.EmployeeID != after.EmployeeID || before.Name != after.Name || !after.HasAttendance {
 		t.Fatalf("employee/history changed: %v", err)
 	}
 	var index string

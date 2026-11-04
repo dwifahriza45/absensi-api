@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"github.com/haidarrasyad/absensi-api/internal/domain/employees"
-	"github.com/haidarrasyad/absensi-api/internal/shared"
 	"testing"
 )
 
@@ -17,9 +16,9 @@ func TestEmployeeImportResolvesDropdownNamesToMasterIDs(t *testing.T) {
 	if err := db.QueryRow(ctx, `INSERT INTO bidang(name) VALUES('Dropdown Bidang') RETURNING bidang_id`).Scan(&bidangID); err != nil {
 		t.Fatal(err)
 	}
-	svc := employees.NewService(employees.NewRepository(db), shared.NewPhoneHasher("dropdown-test"))
+	svc := employees.NewService(employees.NewRepository(db))
 	for i := 0; i < 2; i++ {
-		result, err := svc.Import(ctx, employees.ImportRequest{Rows: []employees.ImportRow{{NIK: "0123456789012345", Name: "Dropdown Employee", Phone: "6281234567890", Mitra: "Dropdown Mitra", Bidang: "Dropdown Bidang"}}})
+		result, err := svc.Import(ctx, employees.ImportRequest{Rows: []employees.ImportRow{{NIK: "0123456789012345", Name: "Dropdown Employee", Mitra: "Dropdown Mitra", Bidang: "Dropdown Bidang"}}})
 		if err != nil || len(result.Skipped) > 0 {
 			t.Fatalf("import failed: %+v %v", result, err)
 		}

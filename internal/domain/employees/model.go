@@ -2,7 +2,7 @@ package employees
 
 import "time"
 
-// Employee adalah data pegawai. NIK dipakai untuk login; nomor HP disimpan sebagai hash kontak dan ciphertext.
+// Employee adalah data pegawai. NIK dipakai untuk login.
 type Employee struct {
 	HasAttendance bool
 	ID            string
@@ -13,11 +13,10 @@ type Employee struct {
 	MitraID string
 	Mitra   string
 
-	BidangID       string
-	Bidang         string
-	PhoneHash      string
-	PhoneEncrypted string
-	IsActive       bool
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	BidangID string
+	Bidang   string
+
+	IsActive  bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

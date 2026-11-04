@@ -9,7 +9,6 @@ import (
 	"github.com/haidarrasyad/absensi-api/internal/domain/employees"
 	"github.com/haidarrasyad/absensi-api/internal/pkg/database"
 	"github.com/haidarrasyad/absensi-api/internal/pkg/token"
-	"github.com/haidarrasyad/absensi-api/internal/shared"
 )
 
 func TestEmployeeHardDeleteOnlyWithoutAttendance(t *testing.T) {
@@ -22,7 +21,7 @@ func TestEmployeeHardDeleteOnlyWithoutAttendance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	svc := employees.NewService(repo, shared.NewPhoneHasher("test"))
+	svc := employees.NewService(repo)
 	detail, err := svc.AdminDetail(ctx, id)
 	if err != nil || !detail.CanDelete || detail.HasAttendance {
 		t.Fatalf("new employee metadata: %+v %v", detail, err)

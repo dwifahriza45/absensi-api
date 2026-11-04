@@ -13,15 +13,15 @@ type SearchItem struct {
 	Bidang   string `json:"bidang"`
 }
 
-// Response berisi profil. Phone hanya diisi pada response admin.
+// Response berisi profil. NIK hanya diisi pada response admin.
 type Response struct {
 	HasAttendance bool   `json:"has_attendance"`
 	CanDelete     bool   `json:"can_delete"`
 	DeleteReason  string `json:"delete_reason,omitempty"`
 	NIK           string `json:"nik,omitempty"`
-	Phone         string `json:"phone,omitempty"`
-	ID            string `json:"id"`
-	EmployeeID    string `json:"employee_id"`
+
+	ID         string `json:"id"`
+	EmployeeID string `json:"employee_id"`
 
 	Name    string `json:"name"`
 	MitraID string `json:"mitra_id,omitempty"`
@@ -67,7 +67,6 @@ type ImportRow struct {
 	Mitra      string `json:"mitra"`
 
 	Bidang string `json:"bidang"`
-	Phone  string `json:"phone"`
 }
 
 // ImportRequest dikirim admin setelah membaca file Excel.

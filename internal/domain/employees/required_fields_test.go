@@ -9,15 +9,14 @@ import (
 	"testing"
 
 	"github.com/haidarrasyad/absensi-api/internal/pkg/httpx"
-	"github.com/haidarrasyad/absensi-api/internal/shared"
 )
 
 func TestEmployeeCreateUpdateRequireDivision(t *testing.T) {
 	for _, body := range []string{
-		`{"name":"Employee","phone":"081234567890","mitra_id":"MTR-20261031-000001"}`,
-		`{"name":"Employee","phone":"081234567890","mitra_id":"MTR-20261031-000001","bidang_id":""}`,
-		`{"name":"Employee","phone":"081234567890","mitra_id":"MTR-20261031-000001","bidang_id":"  "}`,
-		`{"name":"Employee","phone":"081234567890","mitra_id":"MTR-20261031-000001","bidang_id":null}`,
+		`{"name":"Employee","mitra_id":"MTR-20261031-000001"}`,
+		`{"name":"Employee","mitra_id":"MTR-20261031-000001","bidang_id":""}`,
+		`{"name":"Employee","mitra_id":"MTR-20261031-000001","bidang_id":"  "}`,
+		`{"name":"Employee","mitra_id":"MTR-20261031-000001","bidang_id":null}`,
 	} {
 		for _, method := range []string{"POST", "PUT"} {
 			h := NewHandler(nil) // Invalid requests must fail before service/DB access.
@@ -53,8 +52,8 @@ func (r *importCapture) Import(_ context.Context, rows []Employee, _ bool) (Impo
 }
 func TestImportSkipsMissingDivision(t *testing.T) {
 	repo := &importCapture{}
-	s := NewService(repo, shared.NewPhoneHasher("test-secret"))
-	valid := ImportRow{NIK: "0123456789012345", Name: "Valid", Phone: "081234567890", Bidang: "IT"}
+	s := NewService(repo)
+	valid := ImportRow{NIK: "0123456789012345", Name: "Valid", Bidang: "IT"}
 	missing := valid
 	missing.Name = "Missing Division"
 	missing.Bidang = "  "

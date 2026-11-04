@@ -15,7 +15,7 @@ func TestEmployeeNIKCredentialsAndImportIdentity(t *testing.T) {
 	db, _ := concurrencyDB(t)
 	ctx := context.Background()
 	hasher := shared.NewPhoneHasher("nik-test")
-	svc := employees.NewService(employees.NewRepository(db), hasher)
+	svc := employees.NewService(employees.NewRepository(db))
 	var mitra, bidang string
 	if err := db.QueryRow(ctx, `INSERT INTO mitra(name) VALUES('NIK Mitra') RETURNING mitra_id`).Scan(&mitra); err != nil {
 		t.Fatal(err)
@@ -23,12 +23,12 @@ func TestEmployeeNIKCredentialsAndImportIdentity(t *testing.T) {
 	if err := db.QueryRow(ctx, `INSERT INTO bidang(name) VALUES('NIK Bidang') RETURNING bidang_id`).Scan(&bidang); err != nil {
 		t.Fatal(err)
 	}
-	req := employees.WriteRequest{Name: "Nama Sama", NIK: "0123456789012345", Phone: "081234567890", MitraID: mitra, BidangID: bidang}
+	req := employees.WriteRequest{Name: "Nama Sama", NIK: "0123456789012345", MitraID: mitra, BidangID: bidang}
 	first, err := svc.Save(ctx, "", req)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.Phone = "081234567891"
+
 	if _, err := svc.Save(ctx, "", req); err == nil {
 		t.Fatal("duplicate NIK accepted")
 	}
@@ -62,7 +62,7 @@ func TestEmployeeNIKCredentialsAndImportIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Exported immutable ID lets import change NIK without creating a new employee.
-	row := employees.ImportRow{EmployeeID: first.EmployeeID, NIK: "0123456789012347", Name: first.Name, Phone: first.Phone, Mitra: "NIK Mitra", Bidang: "NIK Bidang"}
+	row := employees.ImportRow{EmployeeID: first.EmployeeID, NIK: "0123456789012347", Name: first.Name, Mitra: "NIK Mitra", Bidang: "NIK Bidang"}
 	result, err := svc.Import(ctx, employees.ImportRequest{Rows: []employees.ImportRow{row}})
 	if err != nil || result.Updated != 1 || result.Created != 0 {
 		t.Fatalf("NIK edit import: %+v %v", result, err)
@@ -97,7 +97,7 @@ func TestEmployeeNIKCredentialsAndImportIdentity(t *testing.T) {
 	if _, err := db.Exec(ctx, `UPDATE employees SET phone_hash=$2 WHERE employee_id=$1`, legacyID, hasher.Hash("081234567892")); err != nil {
 		t.Fatal(err)
 	}
-	row = employees.ImportRow{NIK: "0123456789012348", Name: "Legacy", Phone: "081234567892", Mitra: "NIK Mitra", Bidang: "NIK Bidang"}
+	row = employees.ImportRow{EmployeeID: legacyID, NIK: "0123456789012348", Name: "Legacy", Mitra: "NIK Mitra", Bidang: "NIK Bidang"}
 	result, err = svc.Import(ctx, employees.ImportRequest{Rows: []employees.ImportRow{row}})
 	if err != nil || result.Updated != 1 {
 		t.Fatalf("legacy fill: %+v %v", result, err)

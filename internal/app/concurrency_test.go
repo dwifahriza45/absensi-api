@@ -386,8 +386,8 @@ func TestConcurrentImportsAreWholeSnapshots(t *testing.T) {
 		go func(n int, pool *pgxpool.Pool) {
 			<-start
 			_, err := employees.NewRepository(pool).Import(ctx, []employees.Employee{
-				{NIK: fmt.Sprintf("%016d", n*2+1), Name: fmt.Sprintf("set-%d-one", n), PhoneHash: fmt.Sprintf("hash-%d-one", n), Mitra: "B"},
-				{NIK: fmt.Sprintf("%016d", n*2+2), Name: fmt.Sprintf("set-%d-two", n), PhoneHash: fmt.Sprintf("hash-%d-two", n), Mitra: "A"},
+				{NIK: fmt.Sprintf("%016d", n*2+1), Name: fmt.Sprintf("set-%d-one", n), Mitra: "B"},
+				{NIK: fmt.Sprintf("%016d", n*2+2), Name: fmt.Sprintf("set-%d-two", n), Mitra: "A"},
 			}, true)
 			errs <- err
 		}(n, pool)

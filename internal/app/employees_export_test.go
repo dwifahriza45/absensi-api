@@ -10,11 +10,10 @@ import (
 	"github.com/haidarrasyad/absensi-api/internal/app/middleware"
 	"github.com/haidarrasyad/absensi-api/internal/domain/employees"
 	"github.com/haidarrasyad/absensi-api/internal/pkg/token"
-	"github.com/haidarrasyad/absensi-api/internal/shared"
 	"github.com/xuri/excelize/v2"
 )
 
-func TestEmployeeExportFiltersAndTextPhones(t *testing.T) {
+func TestEmployeeExportFiltersAndTextNIK(t *testing.T) {
 	db, _ := concurrencyDB(t)
 	ctx := context.Background()
 	var user, mitra1, mitra2, bidang1, bidang2 string
@@ -32,12 +31,12 @@ func TestEmployeeExportFiltersAndTextPhones(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	svc := employees.NewService(employees.NewRepository(db), shared.NewPhoneHasher("export-test-secret"))
+	svc := employees.NewService(employees.NewRepository(db))
 	active, inactive := true, false
 	for _, row := range []employees.WriteRequest{
-		{NIK: "0123456789012345", Name: "Export Alpha", Phone: "081234567891", MitraID: mitra1, BidangID: bidang1, IsActive: &active},
-		{NIK: "0123456789012346", Name: "Export Beta", Phone: "081234567892", MitraID: mitra1, BidangID: bidang2, IsActive: &inactive},
-		{NIK: "0123456789012347", Name: "=1+1", Phone: "081234567893", MitraID: mitra2, BidangID: bidang1, IsActive: &active},
+		{NIK: "0123456789012345", Name: "Export Alpha", MitraID: mitra1, BidangID: bidang1, IsActive: &active},
+		{NIK: "0123456789012346", Name: "Export Beta", MitraID: mitra1, BidangID: bidang2, IsActive: &inactive},
+		{NIK: "0123456789012347", Name: "=1+1", MitraID: mitra2, BidangID: bidang1, IsActive: &active},
 	} {
 		if _, err := svc.Save(ctx, "", row); err != nil {
 			t.Fatal(err)
@@ -56,7 +55,7 @@ func TestEmployeeExportFiltersAndTextPhones(t *testing.T) {
 		want, rows int
 	}{
 		{"", false, 401, 0}, {"", true, 200, 2}, {"?status=all", true, 200, 3},
-		{"?status=inactive", true, 200, 1}, {"?status=all&q=081234567892", true, 200, 1},
+		{"?status=inactive", true, 200, 1}, {"?status=all&q=081234567892", true, 200, 0},
 		{"?status=all&mitra_id=" + mitra1, true, 200, 2},
 		{"?status=all&bidang_id=" + bidang1, true, 200, 2},
 		{"?q=Alpha", true, 200, 1},
@@ -89,13 +88,10 @@ func TestEmployeeExportFiltersAndTextPhones(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(rows) != tc.rows+1 || len(rows[0]) != 6 || rows[0][0] != "NAMA LENGKAP" || rows[0][1] != "NOMOR HP" {
+		if len(rows) != tc.rows+1 || len(rows[0]) != 5 || rows[0][0] != "NAMA LENGKAP" || rows[0][1] != "MITRA" {
 			t.Fatalf("%s wrong export: %+v", tc.query, rows)
 		}
-		for i, row := range rows[1:] {
-			if len(row[1]) < 2 || row[1][:2] != "62" {
-				t.Fatal("phone must use canonical 62 prefix")
-			}
+		for i := range rows[1:] {
 			cell, _ := excelize.CoordinatesToCellName(1, i+2)
 			formula, err := f.GetCellFormula("Karyawan", cell)
 			if err != nil || formula != "" {

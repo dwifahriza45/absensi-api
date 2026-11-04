@@ -22,14 +22,6 @@ func (s *Service) Save(ctx context.Context, id string, req WriteRequest) (Respon
 		return Response{}, ErrNotFound
 	}
 	e := Employee{NIK: req.NIK, Name: req.Name, MitraID: req.MitraID, BidangID: req.BidangID}
-	if req.Phone != "" {
-		e.PhoneHash = s.hasher.Hash(req.Phone)
-		var err error
-		e.PhoneEncrypted, err = s.hasher.Encrypt(req.Phone)
-		if err != nil {
-			return Response{}, err
-		}
-	}
 	result, err := s.repo.Save(ctx, id, e, req.IsActive)
 	if err != nil {
 		return Response{}, err
@@ -45,11 +37,6 @@ func (s *Service) Delete(ctx context.Context, id string) error {
 
 func (s *Service) adminResponse(e Employee) (Response, error) {
 	result := ToResponse(e)
-	phone, err := s.hasher.Decrypt(e.PhoneEncrypted, e.PhoneHash)
-	if err != nil {
-		return Response{}, err
-	}
-	result.Phone = phone
 	result.NIK = e.NIK
 	return result, nil
 }

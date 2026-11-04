@@ -12,18 +12,16 @@ const (
 	searchLimit     = 10
 	minSearchLength = 3
 	maxImportRows   = 5000
-	minPhoneDigits  = 9
 )
 
 // Service berisi aturan bisnis pegawai.
 type Service struct {
-	repo   Repository
-	hasher shared.PhoneHasher
+	repo Repository
 }
 
 // NewService membuat Service pegawai.
-func NewService(repo Repository, hasher shared.PhoneHasher) *Service {
-	return &Service{repo: repo, hasher: hasher}
+func NewService(repo Repository) *Service {
+	return &Service{repo: repo}
 }
 
 // Search mencari nama pegawai aktif untuk layar login (maks 10 hasil).
@@ -74,7 +72,7 @@ func (s *Service) FilterOptions(ctx context.Context) (FilterOptions, error) {
 	return s.repo.FilterOptions(ctx)
 }
 
-// Import memvalidasi baris Excel, mengubah nomor HP menjadi kode, lalu menyimpannya.
+// Import validates Excel rows and matches employees by ID or NIK.
 func (s *Service) Import(ctx context.Context, req ImportRequest) (ImportResult, error) {
 	if len(req.Rows) > maxImportRows {
 		return ImportResult{}, ErrImportTooLarge
@@ -82,14 +80,12 @@ func (s *Service) Import(ctx context.Context, req ImportRequest) (ImportResult, 
 
 	valid := make([]Employee, 0, len(req.Rows))
 	skipped := make([]SkippedRow, 0)
-	seen := make(map[string]bool, len(req.Rows))
 	seenNIK := make(map[string]bool, len(req.Rows))
 	seenIDs := make(map[string]bool, len(req.Rows))
 
 	for i, row := range req.Rows {
 		rowNumber := i + 2 // baris 1 di Excel adalah judul kolom
 		name := clean(row.Name, 80)
-		phone := shared.NormalizePhone(row.Phone)
 
 		if name == "" {
 			skipped = append(skipped, SkippedRow{Row: rowNumber, Name: "(tanpa nama)", Reason: "Nama kosong"})
@@ -109,47 +105,25 @@ func (s *Service) Import(ctx context.Context, req ImportRequest) (ImportResult, 
 			skipped = append(skipped, SkippedRow{Row: rowNumber, Name: name, Reason: "NIK atau ID karyawan sama dengan baris lain"})
 			continue
 		}
-		if strings.TrimSpace(row.Phone) != "" && len(phone) < minPhoneDigits {
-			skipped = append(skipped, SkippedRow{Row: rowNumber, Name: name, Reason: "Nomor HP tidak valid"})
-			continue
-		}
 
 		if strings.TrimSpace(row.Bidang) == "" {
 			skipped = append(skipped, SkippedRow{Row: rowNumber, Name: name, Reason: "Bidang Wajib Diisi"})
 			continue
 		}
 
-		hash := ""
-		if phone != "" {
-			hash = s.hasher.Hash(phone)
-		}
-		if hash != "" && seen[hash] {
-			skipped = append(skipped, SkippedRow{Row: rowNumber, Name: name, Reason: "Nomor HP sama dengan baris lain"})
-			continue
-		}
-		seen[hash] = true
 		seenNIK[nik] = true
 		if employeeID != "" {
 			seenIDs[employeeID] = true
 		}
 
-		encrypted := ""
-		if phone != "" {
-			var err error
-			encrypted, err = s.hasher.Encrypt(phone)
-			if err != nil {
-				return ImportResult{}, err
-			}
-		}
 		valid = append(valid, Employee{
-			EmployeeID:     employeeID,
-			NIK:            nik,
-			PhoneEncrypted: encrypted,
-			Name:           name,
-			Mitra:          clean(row.Mitra, 80),
+			EmployeeID: employeeID,
+			NIK:        nik,
 
-			Bidang:    clean(row.Bidang, 60),
-			PhoneHash: hash,
+			Name:  name,
+			Mitra: clean(row.Mitra, 80),
+
+			Bidang: clean(row.Bidang, 60),
 		})
 	}
 

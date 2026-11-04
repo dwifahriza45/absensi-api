@@ -39,7 +39,7 @@ func TestMitraCRUDAndEmployeeReferences(t *testing.T) {
 	groups := newRouteGroups(mux)
 	guards := middleware.NewGuards(tokens)
 	registerMitraRoutes(groups, mitra.NewHandler(mitra.NewService(mitra.NewRepository(db))), guards)
-	registerEmployeesRoutes(groups, employees.NewHandler(employees.NewService(employees.NewRepository(db), shared.NewPhoneHasher("test"))), guards)
+	registerEmployeesRoutes(groups, employees.NewHandler(employees.NewService(employees.NewRepository(db))), guards)
 	call := func(method, path, body string, auth bool, want int) json.RawMessage {
 		t.Helper()
 		r := httptest.NewRequest(method, "/api/v1/admin/"+path, strings.NewReader(body))
@@ -77,7 +77,7 @@ func TestMitraCRUDAndEmployeeReferences(t *testing.T) {
 	call("POST", "mitra", `{"name":"IT"}`, true, 409)
 	call("GET", "mitra/"+b.ID, "", true, 404)
 	call("GET", "mitra/"+b.MitraID, "", true, 200)
-	employeeBody := `{"nik":"0123456789012345","name":"Mitra Employee","bidang_id":"` + bidangID + `","phone":"081234567899","mitra_id":"` + b.MitraID + `"}`
+	employeeBody := `{"nik":"0123456789012345","name":"Mitra Employee","bidang_id":"` + bidangID + `","mitra_id":"` + b.MitraID + `"}`
 	call("POST", "employees", strings.ReplaceAll(employeeBody, b.MitraID, "MTR-20000101-999999"), true, 400)
 	var e employees.Response
 	if err := json.Unmarshal(call("POST", "employees", employeeBody, true, 201), &e); err != nil {

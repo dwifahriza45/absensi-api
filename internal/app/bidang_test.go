@@ -39,7 +39,7 @@ func TestBidangCRUDAndEmployeeReferences(t *testing.T) {
 	groups := newRouteGroups(mux)
 	guards := middleware.NewGuards(tokens)
 	registerBidangRoutes(groups, bidang.NewHandler(bidang.NewService(bidang.NewRepository(db))), guards)
-	registerEmployeesRoutes(groups, employees.NewHandler(employees.NewService(employees.NewRepository(db), shared.NewPhoneHasher("test"))), guards)
+	registerEmployeesRoutes(groups, employees.NewHandler(employees.NewService(employees.NewRepository(db))), guards)
 	call := func(method, path, body string, auth bool, want int) json.RawMessage {
 		t.Helper()
 		r := httptest.NewRequest(method, "/api/v1/admin/"+path, strings.NewReader(body))
@@ -77,7 +77,7 @@ func TestBidangCRUDAndEmployeeReferences(t *testing.T) {
 	call("POST", "bidang", `{"name":"IT"}`, true, 409)
 	call("GET", "bidang/"+b.ID, "", true, 404)
 	call("GET", "bidang/"+b.BidangID, "", true, 200)
-	employeeBody := `{"nik":"0123456789012345","name":"Bidang Employee","phone":"081234567899","mitra_id":"` + mitraID + `","bidang_id":"` + b.BidangID + `"}`
+	employeeBody := `{"nik":"0123456789012345","name":"Bidang Employee","mitra_id":"` + mitraID + `","bidang_id":"` + b.BidangID + `"}`
 	call("POST", "employees", strings.ReplaceAll(employeeBody, b.BidangID, "BID-20000101-999999"), true, 400)
 	var e employees.Response
 	if err := json.Unmarshal(call("POST", "employees", employeeBody, true, 201), &e); err != nil {

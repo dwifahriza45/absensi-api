@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/haidarrasyad/absensi-api/internal/domain/employees"
-	"github.com/haidarrasyad/absensi-api/internal/shared"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -20,7 +19,7 @@ func TestEmployeeSearchLimitAndLiteralSQLInput(t *testing.T) {
 	if _, err := db.Exec(ctx, `INSERT INTO employees(name,phone_hash,is_active) VALUES('Search Hidden Employee','hidden-phone',false)`); err != nil {
 		t.Fatal(err)
 	}
-	handler := employees.NewHandler(employees.NewService(employees.NewRepository(db), shared.NewPhoneHasher("search-test")))
+	handler := employees.NewHandler(employees.NewService(employees.NewRepository(db)))
 	for _, tc := range []struct {
 		query string
 		count int

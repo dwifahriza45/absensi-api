@@ -5,7 +5,6 @@ import (
 	"github.com/haidarrasyad/absensi-api/internal/domain/bidang"
 	"github.com/haidarrasyad/absensi-api/internal/domain/employees"
 	"github.com/haidarrasyad/absensi-api/internal/domain/mitra"
-	"github.com/haidarrasyad/absensi-api/internal/shared"
 	"github.com/xuri/excelize/v2"
 	"net/http"
 	"net/http/httptest"
@@ -14,7 +13,7 @@ import (
 
 func TestImportTemplateHeaderStyles(t *testing.T) {
 	db, _ := concurrencyDB(t)
-	svc := employees.NewService(employees.NewRepository(db), shared.NewPhoneHasher("template-test"))
+	svc := employees.NewService(employees.NewRepository(db))
 	for _, tc := range []struct {
 		sheet   string
 		cells   []string

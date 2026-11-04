@@ -73,7 +73,7 @@ func New(ctx context.Context, cfg config.Config) (*App, error) {
 
 	// Service
 	photoSvc := photos.NewService(photoRepo, store, clock, cfg.UploadWorkers)
-	employeeSvc := employees.NewService(employeeRepo, hasher)
+	employeeSvc := employees.NewService(employeeRepo)
 	authSvc := auth.NewService(employeeSvc, auth.NewRepository(db), tokens, hasher, cfg.EmployeeLoginPerIP)
 	coordinator := database.NewCoordinator(db)
 	attendanceSvc := attendances.NewService(attendanceRepo, photoSvc, reportRepo, clock, schedule, coordinator)

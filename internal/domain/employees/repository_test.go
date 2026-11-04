@@ -62,6 +62,7 @@ func TestMitraMigrationAndImport(t *testing.T) {
 	migrate("000009_remove_employee_daerah.up.sql")
 	migrate("000010_instansi_to_mitra.up.sql")
 	migrate("000011_employee_nik.up.sql")
+	migrate("000012_employee_optional_phone.up.sql")
 	repo := NewRepository(db)
 	list, err := repo.List(ctx, ListFilter{Mitra: "Office A"})
 	if err != nil {
@@ -72,9 +73,9 @@ func TestMitraMigrationAndImport(t *testing.T) {
 	}
 	oldID := list[0].MitraID
 	imported, err := repo.Import(ctx, []Employee{
-		{NIK: "0123456789012345", Name: "Imported One", Mitra: "Office A", PhoneHash: "new1"},
-		{NIK: "0123456789012346", Name: "Imported Two", Mitra: "Office B", PhoneHash: "new2"},
-		{NIK: "0123456789012347", Name: "Imported Three", PhoneHash: "new3"},
+		{NIK: "0123456789012345", Name: "Imported One", Mitra: "Office A"},
+		{NIK: "0123456789012346", Name: "Imported Two", Mitra: "Office B"},
+		{NIK: "0123456789012347", Name: "Imported Three"},
 	}, false)
 	if err != nil {
 		t.Fatal(err)
@@ -98,7 +99,7 @@ func TestMitraMigrationAndImport(t *testing.T) {
 	if err != nil || len(opts.Mitra) != 2 {
 		t.Fatalf("options: %+v %v", opts, err)
 	}
-	_, err = repo.Import(ctx, []Employee{{NIK: "0123456789012345", Name: "Imported One", Mitra: "Office B", PhoneHash: "new1"}}, false)
+	_, err = repo.Import(ctx, []Employee{{NIK: "0123456789012345", Name: "Imported One", Mitra: "Office B"}}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,6 +145,7 @@ func TestMitraMigrationAndImport(t *testing.T) {
 	migrate("000009_remove_employee_daerah.up.sql")
 	migrate("000010_instansi_to_mitra.up.sql")
 	migrate("000011_employee_nik.up.sql")
+	migrate("000012_employee_optional_phone.up.sql")
 	if _, err = repo.List(ctx, ListFilter{}); err != nil {
 		t.Fatal(err)
 	}

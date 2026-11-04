@@ -33,7 +33,7 @@ func TestEmployeeCRUDAdmin(t *testing.T) {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
-	registerEmployeesRoutes(newRouteGroups(mux), employees.NewHandler(employees.NewService(employees.NewRepository(db), shared.NewPhoneHasher("test"))), middleware.NewGuards(manager))
+	registerEmployeesRoutes(newRouteGroups(mux), employees.NewHandler(employees.NewService(employees.NewRepository(db))), middleware.NewGuards(manager))
 	call := func(method, path, body string, authenticated bool, want int) json.RawMessage {
 		t.Helper()
 		req := httptest.NewRequest(method, "/api/v1/admin/employees"+path, strings.NewReader(body))
@@ -53,7 +53,7 @@ func TestEmployeeCRUDAdmin(t *testing.T) {
 		}
 		return result.Data
 	}
-	body := `{"nik":"0123456789012345","name":"CRUD Employee","phone":"081234567890","mitra_id":"` + mitraID + `","bidang_id":"` + bidangID + `"}`
+	body := `{"nik":"0123456789012345","name":"CRUD Employee","mitra_id":"` + mitraID + `","bidang_id":"` + bidangID + `"}`
 	for _, method := range []string{"POST", "GET", "PUT", "DELETE"} {
 		path := ""
 		if method != "POST" {
@@ -68,13 +68,6 @@ func TestEmployeeCRUDAdmin(t *testing.T) {
 	if err := json.Unmarshal(call("POST", "", body, true, 201), &e); err != nil {
 		t.Fatal(err)
 	}
-	if e.Phone != "6281234567890" {
-		t.Fatal("admin cannot read contact phone")
-	}
-	var stored string
-	if err := db.QueryRow(ctx, `SELECT phone_encrypted FROM employees WHERE employee_id=$1`, e.EmployeeID).Scan(&stored); err != nil || stored == "" || strings.Contains(stored, e.Phone) {
-		t.Fatal("contact not encrypted at rest")
-	}
 	if !shared.IsPublicID(e.EmployeeID, "EMP") || e.MitraID != mitraID || !e.IsActive {
 		t.Fatalf("invalid created employee: %+v", e)
 	}
@@ -85,13 +78,13 @@ func TestEmployeeCRUDAdmin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	update := `{"nik":"0123456789012346","name":"Edited Employee","mitra_id":"` + mitraID + `","bidang_id":"` + bidangID + `","phone":"081234567891"}`
+	update := `{"nik":"0123456789012346","name":"Edited Employee","mitra_id":"` + mitraID + `","bidang_id":"` + bidangID + `"}`
 	call("PUT", "/"+e.EmployeeID, update, true, 200)
 	if _, err := manager.Parse(ctx, employeeAccess); err == nil {
-		t.Fatal("phone edit did not revoke login")
+		t.Fatal("profile edit did not revoke login")
 	}
 	if _, _, _, err := manager.Refresh(ctx, refresh, token.RoleEmployee); err == nil {
-		t.Fatal("phone edit did not revoke refresh")
+		t.Fatal("profile edit did not revoke refresh")
 	}
 	// Ensure deleting a profile preserves its attendance history and business ID.
 	if _, err := db.Exec(ctx, `INSERT INTO attendances(id,employee_id,work_date,check_in_at) VALUES(gen_random_uuid(),$1,'2026-10-31',now())`, e.EmployeeID); err != nil {

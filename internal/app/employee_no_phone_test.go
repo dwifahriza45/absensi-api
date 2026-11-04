@@ -3,11 +3,10 @@ package app
 import (
 	"context"
 	"github.com/haidarrasyad/absensi-api/internal/domain/employees"
-	"github.com/haidarrasyad/absensi-api/internal/shared"
 	"testing"
 )
 
-func TestEmployeeOptionalPhonePersistence(t *testing.T) {
+func TestEmployeePersistenceWithoutPhone(t *testing.T) {
 	db, _ := concurrencyDB(t)
 	ctx := context.Background()
 	var mitra, bidang string
@@ -17,14 +16,14 @@ func TestEmployeeOptionalPhonePersistence(t *testing.T) {
 	if err := db.QueryRow(ctx, `INSERT INTO bidang(name) VALUES('Optional contact') RETURNING bidang_id`).Scan(&bidang); err != nil {
 		t.Fatal(err)
 	}
-	svc := employees.NewService(employees.NewRepository(db), shared.NewPhoneHasher("optional-contact"))
+	svc := employees.NewService(employees.NewRepository(db))
 	ids := map[string]bool{}
 	for _, nik := range []string{"0123456789012345", "0123456789012346"} {
 		saved, err := svc.Save(ctx, "", employees.WriteRequest{Name: "No contact", NIK: nik, MitraID: mitra, BidangID: bidang})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if saved.Phone != "" || saved.EmployeeID == "" || ids[saved.EmployeeID] {
+		if saved.EmployeeID == "" || ids[saved.EmployeeID] {
 			t.Fatalf("invalid saved employee: %+v", saved)
 		}
 		ids[saved.EmployeeID] = true

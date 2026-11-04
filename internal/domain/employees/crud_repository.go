@@ -16,7 +16,7 @@ func employeeWriteError(err error) error {
 			return apperror.Conflict("employee_nik_exists", "NIK sudah terdaftar pada karyawan lain.")
 		}
 		if pe.Code == "23505" {
-			return apperror.Conflict("employee_phone_exists", "Nomor HP sudah terdaftar pada karyawan lain.")
+			return apperror.Conflict("employee_exists", "Data karyawan sudah terdaftar.")
 		}
 		if pe.Code == "23503" && pe.ConstraintName == "employees_bidang_id_fkey" {
 			return apperror.Validation(map[string]string{"bidang_id": "Bidang Tidak Ditemukan"})
@@ -37,9 +37,9 @@ func (r *postgresRepository) Save(ctx context.Context, id string, e Employee, ac
 			if active != nil {
 				enabled = *active
 			}
-			row = q.QueryRow(ctx, `INSERT INTO employees(name,mitra_id,bidang_id,phone_hash,is_active,phone_encrypted,nik) VALUES($1,$2,$3,NULLIF($4,''),$5,$6,$7) RETURNING employee_id`, e.Name, e.MitraID, nullableMitraID(e.BidangID), e.PhoneHash, enabled, e.PhoneEncrypted, e.NIK)
+			row = q.QueryRow(ctx, `INSERT INTO employees(name,mitra_id,bidang_id,is_active,nik) VALUES($1,$2,$3,$4,$5) RETURNING employee_id`, e.Name, e.MitraID, nullableMitraID(e.BidangID), enabled, e.NIK)
 		} else {
-			row = q.QueryRow(ctx, `UPDATE employees SET nik=$8,name=$2,mitra_id=$3,bidang_id=$4,phone_hash=CASE WHEN $5='' THEN phone_hash ELSE $5 END,phone_encrypted=CASE WHEN $5='' THEN phone_encrypted ELSE $7 END,is_active=COALESCE($6,is_active),updated_at=now() WHERE employee_id=$1 RETURNING employee_id`, id, e.Name, e.MitraID, nullableMitraID(e.BidangID), e.PhoneHash, active, e.PhoneEncrypted, e.NIK)
+			row = q.QueryRow(ctx, `UPDATE employees SET nik=$6,name=$2,mitra_id=$3,bidang_id=$4,is_active=COALESCE($5,is_active),updated_at=now() WHERE employee_id=$1 RETURNING employee_id`, id, e.Name, e.MitraID, nullableMitraID(e.BidangID), active, e.NIK)
 		}
 		var savedID string
 		if err := row.Scan(&savedID); errors.Is(err, pgx.ErrNoRows) {

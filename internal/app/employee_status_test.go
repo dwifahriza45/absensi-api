@@ -10,7 +10,6 @@ import (
 	"github.com/haidarrasyad/absensi-api/internal/app/middleware"
 	"github.com/haidarrasyad/absensi-api/internal/domain/employees"
 	"github.com/haidarrasyad/absensi-api/internal/pkg/token"
-	"github.com/haidarrasyad/absensi-api/internal/shared"
 )
 
 func TestEmployeeStatusOnlyChangesStatusAndRevokesSessions(t *testing.T) {
@@ -32,7 +31,7 @@ func TestEmployeeStatusOnlyChangesStatusAndRevokesSessions(t *testing.T) {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
-	registerEmployeesRoutes(newRouteGroups(mux), employees.NewHandler(employees.NewService(repo, shared.NewPhoneHasher("test"))), middleware.NewGuards(tokens))
+	registerEmployeesRoutes(newRouteGroups(mux), employees.NewHandler(employees.NewService(repo)), middleware.NewGuards(tokens))
 	call := func(body string, auth bool, want int) {
 		t.Helper()
 		r := httptest.NewRequest("PUT", "/api/v1/admin/employees/"+id+"/status", strings.NewReader(body))

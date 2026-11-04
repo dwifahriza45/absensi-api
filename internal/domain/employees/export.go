@@ -2,9 +2,7 @@ package employees
 
 import (
 	"fmt"
-	"github.com/haidarrasyad/absensi-api/internal/shared"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/haidarrasyad/absensi-api/internal/pkg/apperror"
@@ -12,8 +10,7 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-// Export applies the same name/phone search and status filter as the UI,
-// before pagination. Contact numbers are only decrypted for authenticated admins.
+// Export applies the same name/NIK search and status filter as the UI.
 func (h *Handler) Export(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	status := q.Get("status")
@@ -30,16 +27,12 @@ func (h *Handler) Export(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	needle := strings.ToLower(strings.TrimSpace(q.Get("q")))
-	phoneNeedle := ""
-	if regexp.MustCompile(`^[+0-9 ()-]+$`).MatchString(needle) {
-		phoneNeedle = shared.NormalizePhone(needle)
-	}
 	filtered := make([]Response, 0, len(items))
 	for _, item := range items {
 		if status != "all" && item.IsActive != (status == "active") {
 			continue
 		}
-		if needle != "" && !strings.Contains(strings.ToLower(item.Name+" "+item.Phone+" "+item.NIK), needle) && !(phoneNeedle != "" && strings.Contains(item.Phone, phoneNeedle)) {
+		if needle != "" && !strings.Contains(strings.ToLower(item.Name+" "+item.NIK), needle) {
 			continue
 		}
 		filtered = append(filtered, item)
@@ -70,43 +63,36 @@ func employeeWorkbook(items []Response, options FilterOptions) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Format the entire phone column as Text, including blank template rows.
-	// SetCellStr alone does not protect numbers typed into previously empty cells.
-	phoneStyle, err := f.NewStyle(&excelize.Style{NumFmt: 49})
+	// Format NIK and the hidden identifier as text, including blank rows.
+	textStyle, err := f.NewStyle(&excelize.Style{NumFmt: 49})
 	if err != nil {
 		return nil, err
 	}
-	if err = f.SetColStyle("Karyawan", "B", phoneStyle); err != nil {
+	if err = f.SetColStyle("Karyawan", "D:E", textStyle); err != nil {
 		return nil, err
 	}
-	if err = f.SetCellStyle("Karyawan", "B2", "B5001", phoneStyle); err != nil {
-		return nil, err
-	}
-	if err = f.SetColStyle("Karyawan", "E:F", phoneStyle); err != nil {
-		return nil, err
-	}
-	headers := []string{"NAMA LENGKAP", "NOMOR HP", "MITRA", "BIDANG", "NIK", "ID KARYAWAN"}
+	headers := []string{"NAMA LENGKAP", "MITRA", "BIDANG", "NIK", "ID KARYAWAN"}
 	for i, value := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		if err = f.SetCellStr("Karyawan", cell, value); err != nil {
 			return nil, err
 		}
 	}
-	if err = f.SetCellStyle("Karyawan", "A1", "F1", style); err != nil {
+	if err = f.SetCellStyle("Karyawan", "A1", "E1", style); err != nil {
 		return nil, err
 	}
 	if err = f.SetRowHeight("Karyawan", 1, 26); err != nil {
 		return nil, err
 	}
-	if err = f.SetColWidth("Karyawan", "A", "F", 26); err != nil {
+	if err = f.SetColWidth("Karyawan", "A", "E", 26); err != nil {
 		return nil, err
 	}
 	// Keep the identifier for re-importing edits, but hide it in both downloads.
-	if err = f.SetColVisible("Karyawan", "F", false); err != nil {
+	if err = f.SetColVisible("Karyawan", "E", false); err != nil {
 		return nil, err
 	}
 	for i, item := range items {
-		for j, value := range []string{item.Name, item.Phone, item.Mitra, item.Bidang, item.NIK, item.EmployeeID} {
+		for j, value := range []string{item.Name, item.Mitra, item.Bidang, item.NIK, item.EmployeeID} {
 			cell, _ := excelize.CoordinatesToCellName(j+1, i+2)
 			// Explicit strings preserve leading zeroes and never execute formulas.
 			if err = f.SetCellStr("Karyawan", cell, value); err != nil {
@@ -153,8 +139,8 @@ func employeeDropdowns(f *excelize.File, options FilterOptions) error {
 		column, target, name string
 		values               []string
 	}{
-		{"A", "C", "PilihanMitra", options.Mitra},
-		{"B", "D", "PilihanBidang", options.Bidang},
+		{"A", "B", "PilihanMitra", options.Mitra},
+		{"B", "C", "PilihanBidang", options.Bidang},
 	} {
 		if len(entry.values) == 0 {
 			continue
